@@ -73,15 +73,13 @@ func (v Vec[T]) findValues(i int) []T {
 
 // NewVec creates a new persistent vector constructed using vals.
 func NewVec[T any](vals ...T) Vec[T] {
-	//var v TVec[T]
-	var v Vec[T]
+	var v TVec[T]
 
 	for i := 0; i < len(vals); i++ {
 		v = v.Conj(vals[i])
 	}
 
-	return v
-	//return v.Persistent()
+	return v.Persistent()
 }
 
 func (v Vec[T]) Count() int {
@@ -167,7 +165,10 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 			// with a new node containing the old root.
 			newDepth = v.depth + 1
 			newRoot = &vecNode[T]{}
-			newRoot.children = []*vecNode[T]{v.root}
+			// TODO(todd): Make this more elegant. Essentially the problem is
+			// that go arrays and slices need to be initialized here for child
+			// nodes to insert.
+			newRoot.children = (&[vecNodeWidth]*vecNode[T]{v.root})[:]
 		}
 
 		// Walk through the tree with an indirect pointer to find location the
@@ -175,14 +176,16 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 		var indirect = &newRoot
 		for level := newDepth; level > 0; level -= 1 {
 			if *indirect == nil {
-				println("FUCK ME")
-				*indirect = &vecNode[T]{children: make([]*vecNode[T], 0, vecNodeWidth)}
+				*indirect = &vecNode[T]{children: make([]*vecNode[T], vecNodeWidth)}
 			} else {
-				println("FUCK YOU")
-				var newNode = &vecNode[T]{children: make([]*vecNode[T], 0, vecNodeWidth)}
+				var newNode = &vecNode[T]{
+					children: make([]*vecNode[T], 0, vecNodeWidth),
+					values: make([]T, 0, vecNodeWidth),
+				}
 				newNode.children = append([]*vecNode[T]{}, (*indirect).children...)
 				newNode.values = append([]T{}, (*indirect).values...)
-
+				newNode.children = newNode.children[:cap(newNode.children)]
+				newNode.values = newNode.values[:cap(newNode.values)]
 				*indirect = newNode
 			}
 			indirect = &(*indirect).children[idx(v.count-1, level)]
@@ -222,8 +225,7 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 		if v.tail == nil {
 			v.tail = make([]T, 0, vecNodeWidth)
 		}
-		// Increase the length of the slice by one for the new value
-		tail = v.tail[:len(v.tail) + 1]
+		tail = v.tail
 	} else {
 		// There is no room in the tail, so move the tail into the tree.
 		if !isDeepEnough(v.count, v.depth) {
@@ -231,7 +233,10 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 			// with a new node containing the old root.
 			newDepth = v.depth + 1
 			newRoot = &vecNode[T]{}
-			newRoot.children = []*vecNode[T]{v.root}
+			// TODO(todd): Make this more elegant. Essentially the problem is
+			// that go arrays and slices need to be initialized here for child
+			// nodes to insert.
+			newRoot.children = (&[vecNodeWidth]*vecNode[T]{v.root})[:]
 		}
 
 		// Walk through the tree with an indirect pointer to find the location
@@ -240,15 +245,21 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 		var indirect = &newRoot
 		for level := newDepth; level > 0; level -= 1 {
 			if *indirect == nil {
-				println("T FUCK ME")
-				*indirect = &vecNode[T]{}
+				*indirect = &vecNode[T]{children: make([]*vecNode[T], vecNodeWidth)}
 			} else {
-				println("T FUCK YOU")
-				var newNode = &vecNode[T]{}
-				newNode.children = append([]*vecNode[T]{}, (*indirect).children...)
-				newNode.values = append([]T{}, (*indirect).values...)
-
-				*indirect = newNode
+				if (false) {
+					var newNode = &vecNode[T]{
+						children: make([]*vecNode[T], 0, vecNodeWidth),
+						values: make([]T, 0, vecNodeWidth),
+					}
+					newNode.children = append([]*vecNode[T]{}, (*indirect).children...)
+					newNode.values = append([]T{}, (*indirect).values...)
+					newNode.children = newNode.children[:vecNodeWidth]
+					newNode.values = newNode.values[:vecNodeWidth]
+					*indirect = newNode
+				} else {
+					// Do nothing.
+				}
 			}
 			indirect = &(*indirect).children[idx(v.count-1, level)]
 		}
@@ -256,9 +267,9 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 		*indirect = &vecNode[T]{values: v.tail}
 
 		// Create a new tail for conjugating the new value to.
-		tail = make([]T, vecNodeWidth)
+		tail = make([]T, 0, vecNodeWidth)
 	}
-	tail[idx(v.count, 0)] = val
+	tail = append(tail, val)
 
 	return TVec[T]{
 		invalid: false,
@@ -276,6 +287,32 @@ func (v TVec[T]) Persistent() Vec[T] {
 		root: v.root,
 		tail: v.tail,
 	}
+}
+
+func printNode[T any](node *vecNode[T]) {
+	fmt.Printf("%#v\n", node)
+	if node == nil {
+		return
+	}
+	if node.children != nil {
+		fmt.Printf("children {\n")
+		for _, child := range node.children {
+			printNode(child)
+		}
+		fmt.Printf("}\n")
+	}
+	if node.values != nil {
+		fmt.Printf("values [")
+		for _, val := range node.values {
+			fmt.Printf("%v, ", val)
+		}
+		fmt.Printf("]\n")
+	}
+}
+
+func (v Vec[T]) Printd() {
+	fmt.Printf("%#v\n", v)
+	printNode(v.root)
 }
 
 // String returns a representation of a vector in the same form as a Go slice:
