@@ -64,15 +64,16 @@ func (l List[T]) Conj(val T) List[T] {
 	return l.Cons(val)
 }
 
-// String returns a representation of a list similar to standard Go types:
+// String returns a representation of a list similar to standard Go types
+// when using the "%v" formatting verb as in the standard fmt package:
 //     With no elements: ()
 //     With one element: (1)
-//     With more than one element: (1, 2, 3)
+//     With more than one element: (1 2 3)
 func (l List[T]) String() string {
 	s := "("
 	s += fmt.Sprintf("%v", l.first)
 	for walk := l.rest; walk != nil; walk = walk.rest {
-		s += fmt.Sprintf(", %v", walk.first)
+		s += fmt.Sprintf(" %v", walk.first)
 	}
 	s += ")"
 
