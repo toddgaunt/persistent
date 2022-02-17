@@ -31,9 +31,9 @@ type vecNode[T any] struct {
 	values   []T
 }
 
-// idx extracts the bits from i that are needed to index a node at a given
+// indexAt extracts the bits from i that are needed to index a node at a given
 // level in the tree.
-func idx(i, level int) int {
+func indexAt(level, i int) int {
 	return (i >> (level * vecNodeBits)) & vecNodeMask
 }
 
@@ -42,12 +42,11 @@ func (v *Vec[T]) tailOffset() int {
 	return v.count - len(v.tail)
 }
 
-// isDeepEnough returns true if the tree within the vector is deep enough for
-// another element to be added given the amount of elements it contains.
-// Otherwise false is returned when a new node needs to be added in order to
-// make room.
-func isDeepEnough(length, shift int) bool {
-	return (length >> vecNodeBits) <= (1 << shift)
+// isDeepEnoughToAppend evaluates a depth for a Vec to be deep enough for a
+// given count. Returns true if a Vec of depth can be appended to without
+// creating a new root, otherwise returns false.
+func isDeepEnoughToAppend(depth, count int) bool {
+	return (count >> vecNodeBits) <= (1 << depth)
 }
 
 // findValues returns the slice of values within the vector which contains the
@@ -65,7 +64,7 @@ func (v Vec[T]) findValues(i int) []T {
 	// node it is associated with.
 	var walk = v.root
 	for level := v.depth; level > 0; level -= 1 {
-		walk = walk.children[idx(i, level)]
+		walk = walk.children[indexAt(level, i)]
 	}
 
 	return walk.values
@@ -89,7 +88,7 @@ func (v Vec[T]) Count() int {
 // Nth returns from the vector the value at the index provided. The index must
 // be greater than zero and less than v.count.
 func (v Vec[T]) Nth(i int) T {
-	return v.findValues(i)[idx(i, 0)]
+	return v.findValues(i)[indexAt(0, i)]
 }
 
 // Peek returns the last value from a vector.
@@ -125,19 +124,19 @@ func (v Vec[T]) Assoc(key int, val T) Vec[T] {
 
 		var walk = newRoot
 		for level := v.depth; level > 0; level -= 1 {
-			var oldNode = walk.children[idx(key, level)]
+			var oldNode = walk.children[indexAt(level, key)]
 
-			walk.children[idx(key, level)] = &vecNode[T]{}
+			walk.children[indexAt(level, key)] = &vecNode[T]{}
 			walk.children = append([]*vecNode[T]{}, oldNode.children...)
 			walk.values = append([]T{}, oldNode.values...)
 
-			walk = walk.children[idx(key, level)]
+			walk = walk.children[indexAt(level, key)]
 		}
 		leaf = walk.values
 	}
 
 	// Update the value
-	leaf[idx(key, 0)] = val
+	leaf[indexAt(0, key)] = val
 
 	return Vec[T]{
 		depth: v.depth,
@@ -160,7 +159,7 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 		copy(newTail, v.tail)
 	} else {
 		// There is no room in the tail, so move the tail into the tree.
-		if !isDeepEnough(v.count, v.depth) {
+		if !isDeepEnoughToAppend(v.depth, v.count + 1) {
 			// No space left in the current tree, so deepen the tree one level
 			// with a new node containing the old root.
 			newDepth = v.depth + 1
@@ -188,7 +187,7 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 				newNode.values = newNode.values[:cap(newNode.values)]
 				*indirect = newNode
 			}
-			indirect = &(*indirect).children[idx(v.count-1, level)]
+			indirect = &(*indirect).children[indexAt(level, v.count-1)]
 		}
 		// Move the old tail into the trie
 		*indirect = &vecNode[T]{values: v.tail}
@@ -196,7 +195,7 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 		// Create a new tail for conjugating the new value to.
 		newTail = make([]T, 1)
 	}
-	newTail[idx(v.count, 0)] = val
+	newTail[indexAt(0, v.count)] = val
 
 	return Vec[T]{
 		depth: newDepth,
@@ -212,41 +211,50 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 	if v.invalid {
 		panic("attempt at operating on invalidated transient vector")
 	}
-	// Invalidate this transient vector
-	v.invalid = true
 
-	var newDepth = v.depth
-	var newRoot = v.root
-	var tail []T
+	// Invalidate this transient vector since it will be mutated.
+	v.invalid = true
 
 	// Either the tail is being appended to, or a node in the tree is.
 	if len(v.tail) < vecNodeWidth {
-		// The tail still has space, so just use it for appending to.
+		// The tail still has space, so just append to it.
+
 		if v.tail == nil {
 			v.tail = make([]T, 0, vecNodeWidth)
 		}
-		tail = v.tail
+
+		return TVec[T]{
+			invalid: false,
+			depth: v.depth,
+			count: v.count + 1,
+			root:  v.root,
+			tail:  append(v.tail, val),
+		}
 	} else {
 		// There is no room in the tail, so move the tail into the tree.
-		if !isDeepEnough(v.count, v.depth) {
+
+		var depth = v.depth
+		var root = v.root
+		var tail = v.tail
+
+		if !isDeepEnoughToAppend(v.depth, v.count) {
 			// No space left in the current tree, so deepen the tree one level
-			// with a new node containing the old root.
-			newDepth = v.depth + 1
-			newRoot = &vecNode[T]{}
-			// TODO(todd): Make this more elegant. Essentially the problem is
-			// that go arrays and slices need to be initialized here for child
-			// nodes to insert.
-			newRoot.children = (&[vecNodeWidth]*vecNode[T]{v.root})[:]
+			// with a new root node to contain the old root.
+			depth = v.depth + 1
+			root = &vecNode[T]{}
+			root.children = make([]*vecNode[T], vecNodeWidth)
+			root.children[0] = v.root
 		}
 
 		// Walk through the tree with an indirect pointer to find the location
 		// the tail will end up being moved to, making copies of nodes along
 		// the path.
-		var indirect = &newRoot
-		for level := newDepth; level > 0; level -= 1 {
+		var indirect = &root
+		for level := depth; level > 0; level -= 1 {
 			if *indirect == nil {
 				*indirect = &vecNode[T]{children: make([]*vecNode[T], vecNodeWidth)}
 			} else {
+				/*
 				if (false) {
 					var newNode = &vecNode[T]{
 						children: make([]*vecNode[T], 0, vecNodeWidth),
@@ -260,23 +268,25 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 				} else {
 					// Do nothing.
 				}
+				*/
 			}
-			indirect = &(*indirect).children[idx(v.count-1, level)]
+			indirect = &(*indirect).children[indexAt(level, v.count-1)]
 		}
 		// Move the old tail into the trie
 		*indirect = &vecNode[T]{values: v.tail}
 
 		// Create a new tail for conjugating the new value to.
 		tail = make([]T, 0, vecNodeWidth)
-	}
-	tail = append(tail, val)
 
-	return TVec[T]{
-		invalid: false,
-		depth: newDepth,
-		count: v.count + 1,
-		root:  newRoot,
-		tail:  tail,
+		tail = append(tail, val)
+
+		return TVec[T]{
+			invalid: false,
+			depth: depth,
+			count: v.count + 1,
+			root:  root,
+			tail:  tail,
+		}
 	}
 }
 
@@ -315,17 +325,18 @@ func (v Vec[T]) Printd() {
 	printNode(v.root)
 }
 
-// String returns a representation of a vector in the same form as a Go slice:
+// String returns a representation of a vector in the same form as a Go slice
+// when using the "%v" formatting verb as in the standard fmt package:
 //     With no elements: []
 //     With one element: [1]
-//     With more than one element: [1, 2, 3]
+//     With more than one element: [1 2 3]
 func (v Vec[T]) String() string {
 	var s = "["
 	for i := 0; i < v.count; i += 1 {
 		if i == 0 {
 			s += fmt.Sprintf("%v", v.Nth(i))
 		} else {
-			s += fmt.Sprintf(", %v", v.Nth(i))
+			s += fmt.Sprintf(" %v", v.Nth(i))
 		}
 	}
 	s += "]"

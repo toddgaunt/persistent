@@ -31,3 +31,36 @@ func TestVectorConj(t *testing.T) {
 
 func TestVectorAssoc(t *testing.T) {
 }
+
+func TestVectorString(t *testing.T) {
+	type testStruct struct{
+		name string
+		num int
+		x float64
+		y float64
+	}
+
+	var intSlice = []int{1, 2, 3, 4, 5}
+	var stringSlice = []string{"hello", " ", "world"}
+	var structSlice = []testStruct{
+		{"one", 1, 1.0, 1.0},
+		{"Adams", 42, 3.14, 2.71},
+		{"Jdoe", 185, 6.2, 14},
+	}
+
+	var intVec = persistent.NewVec(intSlice...)
+	var stringVec = persistent.NewVec(stringSlice...)
+	var structVec = persistent.NewVec(structSlice...)
+
+	if got, want := fmt.Sprintf("%v", intSlice), intVec.String(); got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+
+	if got, want := fmt.Sprintf("%v", stringSlice), stringVec.String(); got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+
+	if got, want := fmt.Sprintf("%v", structSlice), structVec.String(); got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+}
