@@ -2,10 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-// Package persistent provides data structures for go that that always
-// preserves the previous version of themselves when performing operations on
-// them. Since these structures are immutable, this allows for liberal memory
-// sharing between instances as they are operated upon.
+// Package persistent provides data structures for Go that that always preserve
+// the previous version of themselves when mutating operations are performed on
+// them. Since these structures are effectively immutable, this allows for
+// liberal memory sharing between instances as operations are perfomed in lieu
+// of memory duplication.
 package persistent
 
 type Collection[T any] interface {
