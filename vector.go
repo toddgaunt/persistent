@@ -11,17 +11,6 @@ const vecNodeBits = 2
 const vecNodeWidth = 1 << vecNodeBits
 const vecNodeMask = vecNodeWidth - 1
 
-// TVec is a transient vector. This is similar in structure to a normal
-// persistent vector, however it is used in places where the persistence of a
-// normal Vec isn't needed, and more performant operations are preferred.
-type TVec[T any] struct {
-	invalid bool      // Use when the TVec becomes invalid after a mutation.
-	count int         // Number of elements in this vector
-	depth int         // Depth of the tree under root
-	root  *vecNode[T] // Root of the tree containg either child nodes or elements
-	tail  []T         // Quickly access elements at the end of the vector
-}
-
 // Vec is a persistent vector.
 type Vec[T any] struct {
 	count int         // Number of elements in this vector
@@ -209,15 +198,59 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 	}
 }
 
-// Conj returns a transient vector with a value appended to the end, invalidating
-// the value of the transient vector previously passed in.
-func (v TVec[T]) Conj(val T) TVec[T] {
-	if v.invalid {
-		panic("attempt at operating on invalidated transient vector")
+// String returns a representation of a vector in the same form as a Go slice
+// when using the "%v" formatting verb as in the standard fmt package:
+//     With no elements: []
+//     With one element: [1]
+//     With more than one element: [1 2 3]
+func (v Vec[T]) String() string {
+	var s = "["
+	for i := 0; i < v.count; i += 1 {
+		if i == 0 {
+			s += fmt.Sprintf("%v", v.Nth(i))
+		} else {
+			s += fmt.Sprintf(" %v", v.Nth(i))
+		}
 	}
+	s += "]"
 
-	// Invalidate this transient vector since it will be mutated.
-	v.invalid = true
+	return s
+}
+
+// TVec is a transient vector. This is similar in structure to a normal
+// persistent vector, however it is used in places where the persistence of a
+// normal Vec isn't needed, and more performant operations are preferred.
+type TVec[T any] struct {
+	invalid bool      // Use when the TVec becomes invalid after a mutation.
+	count int         // Number of elements in this vector
+	depth int         // Depth of the tree under root
+	root  *vecNode[T] // Root of the tree containg either child nodes or elements
+	tail  []T         // Quickly access elements at the end of the vector
+}
+
+func (v TVec[T]) invalidate() {
+	if v.invalid {
+		panic("attempted operation on an invalid transient vector")
+	} else {
+		v.invalid = true
+	}
+}
+
+// Persistent creates a new persistent Vector from a transient vector.
+func (v TVec[T]) Persistent() Vec[T] {
+	v.invalidate()
+	return Vec[T]{
+		depth: v.depth,
+		count: v.count,
+		root: v.root,
+		tail: v.tail,
+	}
+}
+
+// Conj returns a transient vector with a value appended to the end,
+// invalidating the value of the transient vector previously passed in.
+func (v TVec[T]) Conj(val T) TVec[T] {
+	v.invalidate()
 
 	// Either the tail is being appended to, or a node in the tree is.
 	if len(v.tail) < vecNodeWidth {
@@ -294,15 +327,6 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 	}
 }
 
-func (v TVec[T]) Persistent() Vec[T] {
-	return Vec[T]{
-		depth: v.depth,
-		count: v.count,
-		root: v.root,
-		tail: v.tail,
-	}
-}
-
 func printNode[T any](node *vecNode[T]) {
 	fmt.Printf("%#v\n", node)
 	if node == nil {
@@ -327,23 +351,4 @@ func printNode[T any](node *vecNode[T]) {
 func (v Vec[T]) Printd() {
 	fmt.Printf("%#v\n", v)
 	printNode(v.root)
-}
-
-// String returns a representation of a vector in the same form as a Go slice
-// when using the "%v" formatting verb as in the standard fmt package:
-//     With no elements: []
-//     With one element: [1]
-//     With more than one element: [1 2 3]
-func (v Vec[T]) String() string {
-	var s = "["
-	for i := 0; i < v.count; i += 1 {
-		if i == 0 {
-			s += fmt.Sprintf("%v", v.Nth(i))
-		} else {
-			s += fmt.Sprintf(" %v", v.Nth(i))
-		}
-	}
-	s += "]"
-
-	return s
 }
