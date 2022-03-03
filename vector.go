@@ -11,14 +11,18 @@ const vecNodeBits = 2
 const vecNodeWidth = 1 << vecNodeBits
 const vecNodeMask = vecNodeWidth - 1
 
+// TVec is a transient vector. This is similar in structure to a normal
+// persistent vector, however it is used in places where the persistence of a
+// normal Vec isn't needed, and more performant operations are preferred.
 type TVec[T any] struct {
-	invalid bool
+	invalid bool      // Use when the TVec becomes invalid after a mutation.
 	count int         // Number of elements in this vector
 	depth int         // Depth of the tree under root
-	root  *vecNode[T] // Root of the tree; Contains either child nodes or elements
+	root  *vecNode[T] // Root of the tree containg either child nodes or elements
 	tail  []T         // Quickly access elements at the end of the vector
 }
 
+// Vec is a persistent vector.
 type Vec[T any] struct {
 	count int         // Number of elements in this vector
 	depth int         // Depth of the tree under root
@@ -27,7 +31,7 @@ type Vec[T any] struct {
 }
 
 type vecNode[T any] struct {
-	children []*vecNode[T]
+	nodes []*vecNode[T]
 	values   []T
 }
 
@@ -64,7 +68,7 @@ func (v Vec[T]) findValues(i int) []T {
 	// node it is associated with.
 	var walk = v.root
 	for level := v.depth; level > 0; level -= 1 {
-		walk = walk.children[indexAt(level, i)]
+		walk = walk.nodes[indexAt(level, i)]
 	}
 
 	return walk.values
@@ -119,18 +123,18 @@ func (v Vec[T]) Assoc(key int, val T) Vec[T] {
 		// Clone the root node first so the changes to the path don't effect
 		// the old vector
 		newRoot = &vecNode[T]{}
-		newRoot.children = append([]*vecNode[T]{}, v.root.children...)
+		newRoot.nodes = append([]*vecNode[T]{}, v.root.nodes...)
 		newRoot.values = append([]T{}, v.root.values...)
 
 		var walk = newRoot
 		for level := v.depth; level > 0; level -= 1 {
-			var oldNode = walk.children[indexAt(level, key)]
+			var oldNode = walk.nodes[indexAt(level, key)]
 
-			walk.children[indexAt(level, key)] = &vecNode[T]{}
-			walk.children = append([]*vecNode[T]{}, oldNode.children...)
+			walk.nodes[indexAt(level, key)] = &vecNode[T]{}
+			walk.nodes = append([]*vecNode[T]{}, oldNode.nodes...)
 			walk.values = append([]T{}, oldNode.values...)
 
-			walk = walk.children[indexAt(level, key)]
+			walk = walk.nodes[indexAt(level, key)]
 		}
 		leaf = walk.values
 	}
@@ -159,7 +163,7 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 		copy(newTail, v.tail)
 	} else {
 		// There is no room in the tail, so move the tail into the tree.
-		if !isDeepEnoughToAppend(v.depth, v.count + 1) {
+		if !isDeepEnoughToAppend(v.depth, v.count) {
 			// No space left in the current tree, so deepen the tree one level
 			// with a new node containing the old root.
 			newDepth = v.depth + 1
@@ -167,7 +171,7 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 			// TODO(todd): Make this more elegant. Essentially the problem is
 			// that go arrays and slices need to be initialized here for child
 			// nodes to insert.
-			newRoot.children = (&[vecNodeWidth]*vecNode[T]{v.root})[:]
+			newRoot.nodes = (&[vecNodeWidth]*vecNode[T]{v.root})[:]
 		}
 
 		// Walk through the tree with an indirect pointer to find location the
@@ -175,19 +179,19 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 		var indirect = &newRoot
 		for level := newDepth; level > 0; level -= 1 {
 			if *indirect == nil {
-				*indirect = &vecNode[T]{children: make([]*vecNode[T], vecNodeWidth)}
+				*indirect = &vecNode[T]{nodes: make([]*vecNode[T], vecNodeWidth)}
 			} else {
 				var newNode = &vecNode[T]{
-					children: make([]*vecNode[T], 0, vecNodeWidth),
+					nodes: make([]*vecNode[T], 0, vecNodeWidth),
 					values: make([]T, 0, vecNodeWidth),
 				}
-				newNode.children = append([]*vecNode[T]{}, (*indirect).children...)
+				newNode.nodes = append([]*vecNode[T]{}, (*indirect).nodes...)
 				newNode.values = append([]T{}, (*indirect).values...)
-				newNode.children = newNode.children[:cap(newNode.children)]
+				newNode.nodes = newNode.nodes[:cap(newNode.nodes)]
 				newNode.values = newNode.values[:cap(newNode.values)]
 				*indirect = newNode
 			}
-			indirect = &(*indirect).children[indexAt(level, v.count-1)]
+			indirect = &(*indirect).nodes[indexAt(level, v.count-1)]
 		}
 		// Move the old tail into the trie
 		*indirect = &vecNode[T]{values: v.tail}
@@ -242,8 +246,8 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 			// with a new root node to contain the old root.
 			depth = v.depth + 1
 			root = &vecNode[T]{}
-			root.children = make([]*vecNode[T], vecNodeWidth)
-			root.children[0] = v.root
+			root.nodes = make([]*vecNode[T], vecNodeWidth)
+			root.nodes[0] = v.root
 		}
 
 		// Walk through the tree with an indirect pointer to find the location
@@ -252,17 +256,17 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 		var indirect = &root
 		for level := depth; level > 0; level -= 1 {
 			if *indirect == nil {
-				*indirect = &vecNode[T]{children: make([]*vecNode[T], vecNodeWidth)}
+				*indirect = &vecNode[T]{nodes: make([]*vecNode[T], vecNodeWidth)}
 			} else {
 				/*
 				if (false) {
 					var newNode = &vecNode[T]{
-						children: make([]*vecNode[T], 0, vecNodeWidth),
+						nodes: make([]*vecNode[T], 0, vecNodeWidth),
 						values: make([]T, 0, vecNodeWidth),
 					}
-					newNode.children = append([]*vecNode[T]{}, (*indirect).children...)
+					newNode.nodes = append([]*vecNode[T]{}, (*indirect).nodes...)
 					newNode.values = append([]T{}, (*indirect).values...)
-					newNode.children = newNode.children[:vecNodeWidth]
+					newNode.nodes = newNode.nodes[:vecNodeWidth]
 					newNode.values = newNode.values[:vecNodeWidth]
 					*indirect = newNode
 				} else {
@@ -270,7 +274,7 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 				}
 				*/
 			}
-			indirect = &(*indirect).children[indexAt(level, v.count-1)]
+			indirect = &(*indirect).nodes[indexAt(level, v.count-1)]
 		}
 		// Move the old tail into the trie
 		*indirect = &vecNode[T]{values: v.tail}
@@ -304,9 +308,9 @@ func printNode[T any](node *vecNode[T]) {
 	if node == nil {
 		return
 	}
-	if node.children != nil {
+	if node.nodes != nil {
 		fmt.Printf("children {\n")
-		for _, child := range node.children {
+		for _, child := range node.nodes {
 			printNode(child)
 		}
 		fmt.Printf("}\n")
