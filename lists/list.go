@@ -10,7 +10,7 @@ type List[T any] struct {
 
 // New creates a new persistent list constructed using vals with
 // the first element of vals being the head of the list, and the last
-// element of vals being the end of the list. As an example, NewList(1,
+// element of vals being the end of the list. As an example, New(1,
 // 2, 3, 4) results in a (1, 2, 3, 4) and not (4, 3, 2, 1) as what
 // would be constructed if done manually using Cons for each value.
 func New[T any](vals ...T) List[T] {
