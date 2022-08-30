@@ -60,19 +60,19 @@ func (v Vec[T]) findValues(i int) []T {
 	for level := v.depth; level > 0; level -= 1 {
 		var nodes, ok = walk.children.([]*vecNode[T])
 		if !ok {
-			panic("non-leaf vector trie not an array of nodes")
+			panic("non-leaf vector trie should be an array of nodes")
 		}
 		walk = nodes[indexAt(level, i)]
 	}
 
 	var nodes, ok = walk.children.([]T)
 	if !ok {
-		panic("leaf of vetor trie not an array of values")
+		panic("leaf of vetor trie shoudl be an array of values")
 	}
 	return nodes
 }
 
-// New creates a new persistent vector constructed using vals.
+// New creates a new persistent vector constructed from the values provided.
 func New[T any](vals ...T) Vec[T] {
 	var v TVec[T]
 
@@ -83,7 +83,8 @@ func New[T any](vals ...T) Vec[T] {
 	return v.Persistent()
 }
 
-func (v Vec[T]) Count() int {
+// Len returns the number of values in the vector
+func (v Vec[T]) Len() int {
 	return v.count
 }
 
@@ -99,7 +100,7 @@ func (v Vec[T]) Peek() T {
 }
 
 // Assoc creates a new vector that contains val at the location indexed by key.
-// The key must be greater than zero and less than v.Count().
+// The key must be greater than zero and less than v.Len().
 func (v Vec[T]) Assoc(key int, val T) Vec[T] {
 	if key < 0 || key >= v.count {
 		panic("index out of bounds")

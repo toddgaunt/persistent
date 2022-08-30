@@ -24,7 +24,7 @@ func New[T any](vals ...T) List[T] {
 }
 
 // Len returns the number of items in the list. Note that the name Len was
-// chosen rather than Count, as it is called in Clojure, to fit into the Go
+// chosen rather than Len(), as it is called in Clojure, to fit into the Go
 // ecosystem better.
 func (l List[T]) Len() int {
 	return l.count
