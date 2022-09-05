@@ -28,7 +28,7 @@ func TestVectorScratch(t *testing.T) {
 	*/
 }
 
-func TestVecNth(t *testing.T) {
+func TestVectorNth(t *testing.T) {
 	var slice = []int{
 		11, 12, 13, 14, 15, 16, 17, 18,
 		21, 22, 23, 24, 25, 26, 27, 28,
@@ -49,10 +49,54 @@ func TestVecNth(t *testing.T) {
 	}
 }
 
+func FuzzVectorNth(f *testing.F) {
+	f.Fuzz(func(t *testing.T, b []byte) {
+		var vec = vectors.New(b...)
+		for i := 0; i < len(b); i++ {
+			if vec.Nth(i) != b[i] {
+				t.Fatalf("want element %d at index %d, got %d", b[i], i, vec.Nth(i))
+			}
+		}
+	})
+}
+
+func FuzzVectorConj(f *testing.F) {
+	f.Add([]byte{}, byte(0))
+	f.Fuzz(func(t *testing.T, init []byte, value byte) {
+		var vec = vectors.New(init...)
+		var result = vec.Conj(value)
+		if got, want := result.Len(), vec.Len()+1; got != want {
+			t.Fatalf("expected conj to make new vector one element longer, got %d, want %d", got, want)
+		}
+		vec = result
+	})
+}
+
+func FuzzVectorAssoc(f *testing.F) {
+	f.Fuzz(func(t *testing.T, init []byte, index int, value byte) {
+		init = append(init, value)
+		if index < 0 {
+			index = -index
+		}
+		index = index % len(init)
+		var vec = vectors.New(init...)
+		var result = vec.Assoc(index, value)
+		if got, want := vec.Len(), result.Len(); got != want {
+			t.Fatalf("got len %d, want len %d", got, want)
+		}
+		if got, want := result.Nth(index), value; got != want {
+			t.Fatalf("got value %v, want value %v", got, want)
+		}
+	})
+}
+
 func TestVectorConj(t *testing.T) {
 }
 
 func TestVectorAssoc(t *testing.T) {
+	//var vec = vectors.New(1, 2, 3, 4, 5, 6, 7, 8, 9)
+	//var result = vec.Assoc(4, 42)
+	//fmt.Printf("old %v vs new %v", vec, result)
 }
 
 func TestVectorString(t *testing.T) {
