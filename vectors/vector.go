@@ -72,8 +72,8 @@ func cloneNode[T any](original *node[T]) *node[T] {
 	return clone
 }
 
-// Vec is a persistent vector.
-type Vec[T any] struct {
+// Vector is a persistent vector.
+type Vector[T any] struct {
 	count int      // Number of elements in this vector
 	depth int      // Depth of the tree under root
 	root  *node[T] // Root of the tree; Contains either child nodes or elements
@@ -81,8 +81,8 @@ type Vec[T any] struct {
 }
 
 // New creates a new persistent vector constructed from the values provided.
-func New[T any](vals ...T) Vec[T] {
-	var v TVec[T]
+func New[T any](vals ...T) Vector[T] {
+	var v TransientVector[T]
 
 	for i := 0; i < len(vals); i++ {
 		v = v.Conj(vals[i])
@@ -91,25 +91,30 @@ func New[T any](vals ...T) Vec[T] {
 	return v.Persistent()
 }
 
+func (v Vector[T]) Transient() TransientVector[T] {
+	//TODO
+	panic("unimplemented")
+}
+
 // Len returns the number of values in v
-func (v Vec[T]) Len() int {
+func (v Vector[T]) Len() int {
 	return v.count
 }
 
 // Nth returns from the vector the value at the index provided. The index must
 // be greater than zero and less than v.count.
-func (v Vec[T]) Nth(i int) T {
-	return findValues(v.count, v.depth, v.root, v.tail, i)[indexAt(0, i)]
+func (v Vector[T]) Nth(index int) T {
+	return findValues(v.count, v.depth, v.root, v.tail, index)[indexAt(0, index)]
 }
 
 // Peek returns the last value from a vector.
-func (v Vec[T]) Peek() T {
+func (v Vector[T]) Peek() T {
 	return v.Nth(v.count - 1)
 }
 
 // Assoc creates a new vector that contains val at the location indexed by key.
 // The key must be greater than zero and less than v.Len().
-func (v Vec[T]) Assoc(index int, value T) Vec[T] {
+func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 	if index < 0 || index >= v.count {
 		panic(fmt.Sprintf("index out of range [%d] with length %d", index, v.count))
 	}
@@ -120,7 +125,7 @@ func (v Vec[T]) Assoc(index int, value T) Vec[T] {
 		copy(newTail, v.tail)
 		newTail[indexAt(0, index)] = value
 
-		return Vec[T]{
+		return Vector[T]{
 			depth: v.depth,
 			count: v.count,
 			root:  v.root,
@@ -138,7 +143,7 @@ func (v Vec[T]) Assoc(index int, value T) Vec[T] {
 	}
 	walk.values[indexAt(0, index)] = value
 
-	return Vec[T]{
+	return Vector[T]{
 		depth: v.depth,
 		count: v.count,
 		root:  newRoot,
@@ -147,19 +152,18 @@ func (v Vec[T]) Assoc(index int, value T) Vec[T] {
 }
 
 // Conj creates a new vector with a value appended to the end.
-func (v Vec[T]) Conj(val T) Vec[T] {
+func (v Vector[T]) Conj(val T) Vector[T] {
 	// Either the tail is being appended to, or a node in the tree is.
 	if len(v.tail) < nodeWidth {
 		// The tail can still be grown, so make a copy to add the new value to.
 		var newTail = make([]T, len(v.tail))
 		copy(newTail, v.tail)
-		newTail = append(newTail, val)
 
-		return Vec[T]{
+		return Vector[T]{
 			depth: v.depth,
 			count: v.count + 1,
 			root:  v.root,
-			tail:  newTail,
+			tail:  append(newTail, val),
 		}
 	}
 
@@ -195,7 +199,7 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 	// Create a new tail that contains the conjugated value.
 	var newTail = []T{val}
 
-	return Vec[T]{
+	return Vector[T]{
 		depth: newDepth,
 		count: v.count + 1,
 		root:  newRoot,
@@ -208,7 +212,7 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 //     With no elements: []
 //     With one element: [1]
 //     With more than one element: [1 2 3]
-func (v Vec[T]) String() string {
+func (v Vector[T]) String() string {
 	var s = "["
 	for i := 0; i < v.count; i += 1 {
 		if i == 0 {
@@ -222,20 +226,20 @@ func (v Vec[T]) String() string {
 	return s
 }
 
-// TVec is a transient vector. This is similar in structure to a normal
+// TransientVector is a transient vector. This is similar in structure to a normal
 // persistent vector, however it is used in places where persistence isn't
 // needed, and more performant operations are required. Each time an operation
-// on a TVec is performed, a new one is created using the same memory. The old
-// TVec then becomes invalidated so if it is used again a panic occurs.
-type TVec[T any] struct {
-	invalid bool     // Use when the TVec becomes invalid after a mutation.
+// on a TransientVector is performed, a new one is created using the same memory. The old
+// TransientVector then becomes invalidated so if it is used again a panic occurs.
+type TransientVector[T any] struct {
+	invalid bool     // Set to true to after a mutation.
 	count   int      // Number of elements in this vector
 	depth   int      // Depth of the tree under root
 	root    *node[T] // Root of the tree containg either child nodes or elements
 	tail    []T      // Quickly access elements at the end of the vector
 }
 
-func (v TVec[T]) invalidate() {
+func (v TransientVector[T]) invalidate() {
 	if v.invalid {
 		panic("attempted operation on an invalid transient vector")
 	} else {
@@ -244,10 +248,10 @@ func (v TVec[T]) invalidate() {
 }
 
 // Persistent creates a new persistent Vector from a transient vector.
-func (v TVec[T]) Persistent() Vec[T] {
+func (v TransientVector[T]) Persistent() Vector[T] {
 	v.invalidate()
 
-	return Vec[T]{
+	return Vector[T]{
 		depth: v.depth,
 		count: v.count,
 		root:  v.root,
@@ -256,18 +260,18 @@ func (v TVec[T]) Persistent() Vec[T] {
 }
 
 // Len returns the number of values in v
-func (v TVec[T]) Len() int {
+func (v TransientVector[T]) Len() int {
 	return v.count
 }
 
 // Nth returns from the vector the value at the index provided. The index must
 // be greater than zero and less than v.count.
-func (v TVec[T]) Nth(i int) T {
-	return findValues(v.count, v.depth, v.root, v.tail, i)[indexAt(0, i)]
+func (v TransientVector[T]) Nth(index int) T {
+	return findValues(v.count, v.depth, v.root, v.tail, index)[indexAt(0, index)]
 }
 
 // Peek returns the last value from a vector.
-func (v TVec[T]) Peek() T {
+func (v TransientVector[T]) Peek() T {
 	return v.Nth(v.count - 1)
 }
 
@@ -276,7 +280,7 @@ func (v TVec[T]) Peek() T {
 //     With no elements: []
 //     With one element: [1]
 //     With more than one element: [1 2 3]
-func (v TVec[T]) String() string {
+func (v TransientVector[T]) String() string {
 	var s = "["
 	for i := 0; i < v.count; i += 1 {
 		if i == 0 {
@@ -292,15 +296,16 @@ func (v TVec[T]) String() string {
 
 // Assoc returns a transient vector with a value updated at the given index,
 // invalidating the transient vector that was operated on.
-func (v TVec[T]) Assoc(index int, value T) TVec[T] {
-	v.invalidate()
+func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
 	if index < 0 || index >= v.count {
 		panic(fmt.Sprintf("index out of range [%d] with length %d", index, v.count))
 	}
 
+	v.invalidate()
+
 	if index >= tailOffset(v.count, v.tail) {
 		v.tail[indexAt(0, index)] = value
-		return TVec[T]{
+		return TransientVector[T]{
 			invalid: false,
 			depth:   v.depth,
 			count:   v.count,
@@ -316,7 +321,7 @@ func (v TVec[T]) Assoc(index int, value T) TVec[T] {
 	}
 	walk.values[indexAt(0, index)] = value
 
-	return TVec[T]{
+	return TransientVector[T]{
 		invalid: false,
 		depth:   v.depth,
 		count:   v.count,
@@ -327,14 +332,14 @@ func (v TVec[T]) Assoc(index int, value T) TVec[T] {
 
 // Conj returns a transient vector with a value appended to the end,
 // invalidating the transient vector operated on.
-func (v TVec[T]) Conj(val T) TVec[T] {
+func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 	v.invalidate()
 
 	// Either the tail is being appended to, or a node in the tree is.
 	if len(v.tail) < nodeWidth {
 		// The tail still has space, so just append to it.
 
-		return TVec[T]{
+		return TransientVector[T]{
 			invalid: false,
 			depth:   v.depth,
 			count:   v.count + 1,
@@ -372,7 +377,7 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 	var newTail = make([]T, 0, nodeWidth)
 	newTail = append(newTail, val)
 
-	return TVec[T]{
+	return TransientVector[T]{
 		invalid: false,
 		depth:   newDepth,
 		count:   v.count + 1,
@@ -402,7 +407,7 @@ func printNode[T any](n *node[T]) {
 	}
 }
 
-func (v Vec[T]) Printd() {
+func (v Vector[T]) Printd() {
 	fmt.Printf("%#v\n", v)
 	printNode(v.root)
 }
