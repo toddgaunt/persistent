@@ -192,7 +192,7 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 	// other vectors sharing this trie won't be affected by this change.
 	*indirect = &node[T]{values: v.tail}
 
-	// Create a new tail that contains the newly conjugated value.
+	// Create a new tail that contains the conjugated value.
 	var newTail = []T{val}
 
 	return Vec[T]{
@@ -358,7 +358,7 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 	}
 
 	// Walk through the tree with an indirect pointer to find the location the
-	// tail will end up being moved to.
+	// old tail will end up being moved to, then move it in as a value node.
 	var indirect = &newRoot
 	for level := newDepth; level > 0; level -= 1 {
 		if *indirect == nil {
@@ -366,7 +366,6 @@ func (v TVec[T]) Conj(val T) TVec[T] {
 		}
 		indirect = &(*indirect).nodes[indexAt(level, v.count-1)]
 	}
-	// Move the old tail into the trie
 	*indirect = &node[T]{values: v.tail}
 
 	// Create a new tail for conjugating the new value to.
