@@ -7,27 +7,6 @@ import (
 	"bastionburrow.com/persistent/vectors"
 )
 
-func TestVectorScratch(t *testing.T) {
-	/*
-		var slice = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33}
-		//var slice = []int{1, 2, 3, 4, 5}
-		var vec = vectors.New(slice...)
-		vec.Printd()
-
-		for i := 0; i < len(slice); i++ {
-			if vec.Nth(i) !=  slice[i] {
-				t.Fatalf("want element %d at index %d, got %s", slice[i], i, vec.String())
-			}
-		}
-		fmt.Printf("%s\n", vec.String())
-
-		var vec2 = vec.Conj(42)
-
-		fmt.Printf("vec: %s\n", vec.String())
-		fmt.Printf("vec2: %s\n", vec2.String())
-	*/
-}
-
 func TestVectorNth(t *testing.T) {
 	var slice = []int{
 		11, 12, 13, 14, 15, 16, 17, 18,
@@ -49,54 +28,26 @@ func TestVectorNth(t *testing.T) {
 	}
 }
 
-func FuzzVectorNth(f *testing.F) {
-	f.Fuzz(func(t *testing.T, b []byte) {
-		var vec = vectors.New(b...)
-		for i := 0; i < len(b); i++ {
-			if vec.Nth(i) != b[i] {
-				t.Fatalf("want element %d at index %d, got %d", b[i], i, vec.Nth(i))
-			}
-		}
-	})
-}
-
-func FuzzVectorConj(f *testing.F) {
-	f.Add([]byte{}, byte(0))
-	f.Fuzz(func(t *testing.T, init []byte, value byte) {
-		var vec = vectors.New(init...)
-		var result = vec.Conj(value)
-		if got, want := result.Len(), vec.Len()+1; got != want {
-			t.Fatalf("expected conj to make new vector one element longer, got %d, want %d", got, want)
-		}
-		vec = result
-	})
-}
-
-func FuzzVectorAssoc(f *testing.F) {
-	f.Fuzz(func(t *testing.T, init []byte, index int, value byte) {
-		init = append(init, value)
-		if index < 0 {
-			index = -index
-		}
-		index = index % len(init)
-		var vec = vectors.New(init...)
-		var result = vec.Assoc(index, value)
-		if got, want := vec.Len(), result.Len(); got != want {
-			t.Fatalf("got len %d, want len %d", got, want)
-		}
-		if got, want := result.Nth(index), value; got != want {
-			t.Fatalf("got value %v, want value %v", got, want)
-		}
-	})
-}
-
 func TestVectorConj(t *testing.T) {
+	var vec = vectors.New[int]()
+	vec = vec.Conj(2)
+	if got, want := vec.Peek(), 2; got != want {
+		t.Fatalf("got vec.Peek()=%v, want vec.Peek()=%v", got, want)
+	}
+	if got, want := vec.Len(), 1; got != want {
+		t.Fatalf("got vec.Len()=%v, want vec.Len()=%v", got, want)
+	}
 }
 
 func TestVectorAssoc(t *testing.T) {
-	//var vec = vectors.New(1, 2, 3, 4, 5, 6, 7, 8, 9)
-	//var result = vec.Assoc(4, 42)
-	//fmt.Printf("old %v vs new %v", vec, result)
+	var vec = vectors.New(1, 2, 3, 4, 5, 6, 7, 8)
+	vec = vec.Assoc(5, 42)
+	if got, want := vec.Len(), 8; got != want {
+		t.Fatalf("got vec.Len()=%v, want vec.Len()=%v", got, want)
+	}
+	if got, want := vec.Nth(5), 42; got != want {
+		t.Fatalf("got vec.Nth(5)=%v, want vec.Nth(5)=%v", got, want)
+	}
 }
 
 func TestVectorString(t *testing.T) {
@@ -130,4 +81,53 @@ func TestVectorString(t *testing.T) {
 	if got, want := fmt.Sprintf("%v", structSlice), structVec.String(); got != want {
 		t.Errorf("got %s, want %s", got, want)
 	}
+}
+
+func FuzzVectorNth(f *testing.F) {
+	f.Fuzz(func(t *testing.T, b []byte) {
+		var vec = vectors.New(b...)
+		for i := 0; i < len(b); i++ {
+			if vec.Nth(i) != b[i] {
+				t.Fatalf("want element %d at index %d, got %d", b[i], i, vec.Nth(i))
+			}
+		}
+	})
+}
+
+func FuzzVectorConj(f *testing.F) {
+	f.Add([]byte{}, byte(0))
+	f.Add(
+		[]byte{1, 2, 3, 4},
+		byte(5),
+	)
+	f.Add(
+		[]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
+		byte(33),
+	)
+	f.Fuzz(func(t *testing.T, init []byte, value byte) {
+		var vec = vectors.New(init...)
+		var result = vec.Conj(value)
+		if got, want := result.Len(), vec.Len()+1; got != want {
+			t.Fatalf("expected conj to make new vector one element longer, got %d, want %d", got, want)
+		}
+		vec = result
+	})
+}
+
+func FuzzVectorAssoc(f *testing.F) {
+	f.Fuzz(func(t *testing.T, init []byte, index int, value byte) {
+		init = append(init, value)
+		if index < 0 {
+			index = -index
+		}
+		index = index % len(init)
+		var vec = vectors.New(init...)
+		var result = vec.Assoc(index, value)
+		if got, want := vec.Len(), result.Len(); got != want {
+			t.Fatalf("got len %d, want len %d", got, want)
+		}
+		if got, want := result.Nth(index), value; got != want {
+			t.Fatalf("got value %v, want value %v", got, want)
+		}
+	})
 }
