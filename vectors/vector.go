@@ -56,6 +56,22 @@ type node[T any] struct {
 	values   []T
 }
 
+func cloneNode[T any](original *node[T]) *node[T] {
+	if original == nil {
+		return nil
+	}
+
+	var clone = &node[T]{
+		nodes:  make([]*node[T], len(original.nodes)),
+		values: make([]T, len(original.values)),
+	}
+
+	copy(clone.nodes, original.nodes)
+	copy(clone.values, original.values)
+
+	return clone
+}
+
 // Vec is a persistent vector.
 type Vec[T any] struct {
 	count int      // Number of elements in this vector
@@ -185,20 +201,6 @@ func (v Vec[T]) Conj(val T) Vec[T] {
 		root:  newRoot,
 		tail:  newTail,
 	}
-}
-
-func cloneNode[T any](original *node[T]) *node[T] {
-	var clone = &node[T]{
-		nodes:  make([]*node[T], 0, nodeWidth),
-		values: make([]T, 0, nodeWidth),
-	}
-
-	clone.nodes = append([]*node[T]{}, (*original).nodes...)
-	clone.values = append([]T{}, (*original).values...)
-	clone.nodes = clone.nodes[:cap(clone.nodes)]
-	clone.values = clone.values[:cap(clone.values)]
-
-	return clone
 }
 
 // String returns a representation of a vector in the same form as a Go slice
