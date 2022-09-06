@@ -7,6 +7,7 @@
 # Whitelist the following extensions
 !*.go
 !*.sh
+!*.gp
 
 # Whitelist specific filenames
 !*.gitignore

@@ -7,7 +7,7 @@ package vectors
 import "fmt"
 
 // These constants determine the maximum width of vector nodes
-const nodeBits = 5
+const nodeBits = 2
 const nodeWidth = 1 << nodeBits
 const nodeMask = nodeWidth - 1
 
@@ -50,18 +50,48 @@ func findValues[T any](count, depth int, root *node[T], tail []T, index int) []T
 	return walk.values
 }
 
-type node[T any] struct {
-	children any
-	nodes    []*node[T]
-	values   []T
+func cloneTail[T any](tail []T) []T {
+	var newTail = make([]T, len(tail))
+	copy(newTail, tail)
+	return newTail
 }
 
-func cloneNode[T any](original *node[T]) *node[T] {
+type id int
+
+var persistent *id = nil
+
+func newID() *id {
+	return new(id)
+}
+
+type node[T any] struct {
+	// id indicates if a node was made by transient vector if it is not zero.
+	id     *id
+	nodes  []*node[T]
+	values []T
+}
+
+func newNode[T any](id *id) *node[T] {
+	return &node[T]{
+		id:    id,
+		nodes: make([]*node[T], nodeWidth),
+	}
+}
+
+func newLeaf[T any](id *id, values []T) *node[T] {
+	return &node[T]{
+		id:     id,
+		values: values[:],
+	}
+}
+
+func cloneNode[T any](id *id, original *node[T]) *node[T] {
 	if original == nil {
 		return nil
 	}
 
 	var clone = &node[T]{
+		id:     id,
 		nodes:  make([]*node[T], len(original.nodes)),
 		values: make([]T, len(original.values)),
 	}
@@ -92,8 +122,13 @@ func New[T any](vals ...T) Vector[T] {
 }
 
 func (v Vector[T]) Transient() TransientVector[T] {
-	//TODO
-	panic("unimplemented")
+	return TransientVector[T]{
+		invalid: false,
+		count:   v.count,
+		depth:   v.depth,
+		root:    cloneNode(newID(), v.root),
+		tail:    cloneTail(v.tail),
+	}
 }
 
 // Len returns the number of values in v
@@ -121,8 +156,7 @@ func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 
 	if index >= tailOffset(v.count, v.tail) {
 		// The value to update is in the tail, so make a copy of the tail
-		var newTail = make([]T, len(v.tail))
-		copy(newTail, v.tail)
+		var newTail = cloneTail(v.tail)
 		newTail[indexAt(0, index)] = value
 
 		return Vector[T]{
@@ -134,11 +168,11 @@ func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 	}
 
 	// Walk through the tree, cloning the path to the updated node.
-	var newRoot = cloneNode(v.root)
+	var newRoot = cloneNode(persistent, v.root)
 	var walk = newRoot
 	for level := v.depth; level > 0; level -= 1 {
 		var i = indexAt(level, index)
-		walk.nodes[i] = cloneNode(walk.nodes[i])
+		walk.nodes[i] = cloneNode(persistent, walk.nodes[i])
 		walk = walk.nodes[i]
 	}
 	walk.values[indexAt(0, index)] = value
@@ -156,8 +190,7 @@ func (v Vector[T]) Conj(val T) Vector[T] {
 	// Either the tail is being appended to, or a node in the tree is.
 	if len(v.tail) < nodeWidth {
 		// The tail can still be grown, so make a copy to add the new value to.
-		var newTail = make([]T, len(v.tail))
-		copy(newTail, v.tail)
+		var newTail = cloneTail(v.tail)
 
 		return Vector[T]{
 			depth: v.depth,
@@ -175,8 +208,7 @@ func (v Vector[T]) Conj(val T) Vector[T] {
 		// No space left in the current tree, so deepen the tree one level
 		// with a new node containing the old root.
 		newDepth = v.depth + 1
-		newRoot = &node[T]{}
-		newRoot.nodes = make([]*node[T], nodeWidth)
+		newRoot = newNode[T](persistent)
 		newRoot.nodes[0] = v.root
 	}
 
@@ -186,15 +218,15 @@ func (v Vector[T]) Conj(val T) Vector[T] {
 	var indirect = &newRoot
 	for level := newDepth; level > 0; level -= 1 {
 		if *indirect == nil {
-			*indirect = &node[T]{nodes: make([]*node[T], nodeWidth)}
+			*indirect = newNode[T](persistent)
 		} else {
-			*indirect = cloneNode(*indirect)
+			*indirect = cloneNode(persistent, *indirect)
 		}
 		indirect = &(*indirect).nodes[indexAt(level, v.count-1)]
 	}
 	// Move the old tail as a new node into the trie. Since it has a new path,
 	// other vectors sharing this trie won't be affected by this change.
-	*indirect = &node[T]{values: v.tail}
+	*indirect = newLeaf(persistent, v.tail)
 
 	// Create a new tail that contains the conjugated value.
 	var newTail = []T{val}
@@ -232,6 +264,7 @@ func (v Vector[T]) String() string {
 // on a TransientVector is performed, a new one is created using the same memory. The old
 // TransientVector then becomes invalidated so if it is used again a panic occurs.
 type TransientVector[T any] struct {
+	id      *id      // Used to ensure transients mutate only nodes with their unique ID.
 	invalid bool     // Set to true to after a mutation.
 	count   int      // Number of elements in this vector
 	depth   int      // Depth of the tree under root
@@ -254,8 +287,8 @@ func (v TransientVector[T]) Persistent() Vector[T] {
 	return Vector[T]{
 		depth: v.depth,
 		count: v.count,
-		root:  v.root,
-		tail:  v.tail,
+		root:  cloneNode(persistent, v.root),
+		tail:  cloneTail(v.tail),
 	}
 }
 
@@ -281,6 +314,10 @@ func (v TransientVector[T]) Peek() T {
 //     With one element: [1]
 //     With more than one element: [1 2 3]
 func (v TransientVector[T]) String() string {
+	if v.invalid {
+		panic("attempted operation on an invalid transient vector")
+	}
+
 	var s = "["
 	for i := 0; i < v.count; i += 1 {
 		if i == 0 {
@@ -317,7 +354,11 @@ func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
 	// Walk through the tree and update the leaf value found.
 	var walk = v.root
 	for level := v.depth; level > 0; level -= 1 {
-		walk = walk.nodes[indexAt(level, index)]
+		var i = indexAt(level, index)
+		if walk.nodes[i].id == persistent {
+			walk.nodes[i] = cloneNode(v.id, walk.nodes[i])
+		}
+		walk = walk.nodes[i]
 	}
 	walk.values[indexAt(0, index)] = value
 
@@ -357,8 +398,7 @@ func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 		// No space left in the current tree, so deepen the tree one level
 		// with a new root node to contain the old root.
 		newDepth = v.depth + 1
-		newRoot = &node[T]{}
-		newRoot.nodes = make([]*node[T], nodeWidth)
+		newRoot = newNode[T](v.id)
 		newRoot.nodes[0] = v.root
 	}
 
@@ -367,15 +407,14 @@ func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 	var indirect = &newRoot
 	for level := newDepth; level > 0; level -= 1 {
 		if *indirect == nil {
-			*indirect = &node[T]{nodes: make([]*node[T], nodeWidth)}
+			*indirect = newNode[T](v.id)
 		}
 		indirect = &(*indirect).nodes[indexAt(level, v.count-1)]
 	}
-	*indirect = &node[T]{values: v.tail}
+	*indirect = newLeaf(v.id, v.tail)
 
 	// Create a new tail for conjugating the new value to.
-	var newTail = make([]T, 0, nodeWidth)
-	newTail = append(newTail, val)
+	var newTail = []T{val}
 
 	return TransientVector[T]{
 		invalid: false,
@@ -384,30 +423,4 @@ func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 		root:    newRoot,
 		tail:    newTail,
 	}
-}
-
-func printNode[T any](n *node[T]) {
-	fmt.Printf("%#v\n", n)
-	if n == nil {
-		return
-	}
-	if n.nodes != nil {
-		fmt.Printf("children {\n")
-		for _, child := range n.nodes {
-			printNode(child)
-		}
-		fmt.Printf("}\n")
-	}
-	if n.values != nil {
-		fmt.Printf("values [")
-		for _, val := range n.values {
-			fmt.Printf("%v, ", val)
-		}
-		fmt.Printf("]\n")
-	}
-}
-
-func (v Vector[T]) Printd() {
-	fmt.Printf("%#v\n", v)
-	printNode(v.root)
 }
