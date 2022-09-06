@@ -148,7 +148,7 @@ func newBenchmarkVec(n int) vectors.Vector[int] {
 	return vectors.New(slice...)
 }
 
-func BenchmarkVectorNthTrie(b *testing.B) {
+func BenchmarkNthTriePersistent(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkVec(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
@@ -159,7 +159,7 @@ func BenchmarkVectorNthTrie(b *testing.B) {
 	}
 }
 
-func BenchmarkVectorNthTail(b *testing.B) {
+func BenchmarkNthTailPersistent(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkVec(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
@@ -170,7 +170,7 @@ func BenchmarkVectorNthTail(b *testing.B) {
 	}
 }
 
-func BenchmarkVectorConjTrie(b *testing.B) {
+func BenchmarkConjTriePersistent(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkVec(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
@@ -181,7 +181,7 @@ func BenchmarkVectorConjTrie(b *testing.B) {
 	}
 }
 
-func BenchmarkVectorConjTail(b *testing.B) {
+func BenchmarkConjTailPersistent(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkVec(n - 1)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
@@ -192,7 +192,7 @@ func BenchmarkVectorConjTail(b *testing.B) {
 	}
 }
 
-func BenchmarkVectorAssocTrie(b *testing.B) {
+func BenchmarkAssocTriePersistent(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkVec(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
@@ -203,7 +203,7 @@ func BenchmarkVectorAssocTrie(b *testing.B) {
 	}
 }
 
-func BenchmarkVectorAssocTail(b *testing.B) {
+func BenchmarkAssocTailPersistent(b *testing.B) {
 	for _, n := range benchmarkCases {
 		n = n - 1
 		vec := newBenchmarkVec(n)
@@ -218,12 +218,12 @@ func BenchmarkVectorAssocTail(b *testing.B) {
 func newBenchmarkTransientVector(n int) vectors.TransientVector[int] {
 	var vec vectors.TransientVector[int]
 	for i := 0; i < n; i++ {
-		vec = vec.Conj(n)
+		vec = vec.Conj(i + 1)
 	}
 	return vec
 }
 
-func BenchmarkTransientVectorNthTrie(b *testing.B) {
+func BenchmarkNthTrieTransient(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkTransientVector(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
@@ -234,7 +234,7 @@ func BenchmarkTransientVectorNthTrie(b *testing.B) {
 	}
 }
 
-func BenchmarkTransientVectorNthTail(b *testing.B) {
+func BenchmarkNthTailTransient(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkTransientVector(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
@@ -245,7 +245,7 @@ func BenchmarkTransientVectorNthTail(b *testing.B) {
 	}
 }
 
-func BenchmarkTransientVectorConjTrie(b *testing.B) {
+func BenchmarkConjTrieTransient(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkTransientVector(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
@@ -256,9 +256,10 @@ func BenchmarkTransientVectorConjTrie(b *testing.B) {
 	}
 }
 
-func BenchmarkTransientVectorConjTail(b *testing.B) {
+func BenchmarkConjTailTransient(b *testing.B) {
 	for _, n := range benchmarkCases {
-		vec := newBenchmarkTransientVector(n - 1)
+		n = n - 1
+		vec := newBenchmarkTransientVector(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				vec.Conj(42)
@@ -267,7 +268,7 @@ func BenchmarkTransientVectorConjTail(b *testing.B) {
 	}
 }
 
-func BenchmarkTransientVectorAssocTrie(b *testing.B) {
+func BenchmarkAssocTrieTransient(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkTransientVector(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
@@ -278,12 +279,55 @@ func BenchmarkTransientVectorAssocTrie(b *testing.B) {
 	}
 }
 
-func BenchmarkTransientVectorAssocTail(b *testing.B) {
+func BenchmarkAssocTailTransient(b *testing.B) {
 	for _, n := range benchmarkCases {
 		vec := newBenchmarkTransientVector(n)
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				vec.Assoc(n-1, 42)
+			}
+		})
+	}
+}
+
+// Go slice baseline comparison
+
+func newBenchmarkSlice(n int) []int {
+	vec := make([]int, n)
+	for i := 0; i < n; i++ {
+		vec[i] = i + 1
+	}
+	return vec
+}
+
+func BenchmarkNthTailGoSlice(b *testing.B) {
+	for _, n := range benchmarkCases {
+		slice := newBenchmarkSlice(n)
+		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				_ = slice[n-1]
+			}
+		})
+	}
+}
+
+func BenchmarkConjTailGoSlice(b *testing.B) {
+	for _, n := range benchmarkCases {
+		slice := newBenchmarkSlice(n)
+		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				slice = append(slice, 42)
+			}
+		})
+	}
+}
+
+func BenchmarkAssocTailGoSlice(b *testing.B) {
+	for _, n := range benchmarkCases {
+		slice := newBenchmarkSlice(n)
+		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				slice[n-1] = 42
 			}
 		})
 	}
