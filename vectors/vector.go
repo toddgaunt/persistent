@@ -7,7 +7,7 @@ package vectors
 import "fmt"
 
 // These constants determine the maximum width of vector nodes
-const nodeBits = 2
+const nodeBits = 5
 const nodeWidth = 1 << nodeBits
 const nodeMask = nodeWidth - 1
 
