@@ -85,6 +85,8 @@ plot() {
 		"$dir/performance.gp"
 }
 
+mkdir -p "$dir"
+
 if ! [[ -f "$data" ]]; then
 	echo "Running benchmarks to generate $data"
 	go test -bench=. | tee "$data"
