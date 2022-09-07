@@ -428,8 +428,10 @@ func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 	}
 	*indirect = newLeaf(v.id, v.tail)
 
-	// Create a new tail for conjugating the new value to.
-	var newTail = []T{val}
+	// Create a new tail for conjugating the new value to. Allocate enough
+	// space for a full tail up-front to optimize appending new values.
+	var newTail = make([]T, 0, nodeWidth)
+	newTail = append(newTail, val)
 
 	return TransientVector[T]{
 		invalid: false,
