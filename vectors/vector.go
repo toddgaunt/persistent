@@ -17,9 +17,9 @@ func indexAt(level, i int) int {
 	return (i >> (level * nodeBits)) & nodeMask
 }
 
-// tailOffset returns the total number of elements within a Vec minus the tail.
-func tailOffset[T any](count int, tail []T) int {
-	return count - len(tail)
+// indexInTail returns the total number of elements within a Vec minus the tail.
+func indexInTail[T any](index int, count int, tail []T) bool {
+	return index >= (count - len(tail))
 }
 
 // isDeepEnoughToAppend evaluates a depth for a Vec to be deep enough for a
@@ -36,7 +36,7 @@ func findValues[T any](count, depth int, root *node[T], tail []T, index int) []T
 		panic(fmt.Sprintf("index out of range [%d] with length %d", index, count))
 	}
 
-	if index >= tailOffset(count, tail) {
+	if indexInTail(index, count, tail) {
 		return tail
 	}
 
@@ -154,7 +154,7 @@ func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 		panic(fmt.Sprintf("index out of range [%d] with length %d", index, v.count))
 	}
 
-	if index >= tailOffset(v.count, v.tail) {
+	if indexInTail(index, v.count, v.tail) {
 		// The value to update is in the tail, so make a copy of the tail
 		var newTail = cloneTail(v.tail)
 		newTail[indexAt(0, index)] = value
@@ -262,9 +262,19 @@ func (v Vector[T]) String() string {
 // persistent vector, however it is used in places where persistence isn't
 // needed, and more performant operations are required. Each time an operation
 // on a TransientVector is performed, a new one is created using the same memory. The old
-// TransientVector then becomes invalidated so if it is used again a panic occurs.
+// TransientVector then becomes invalidated so if it is used again a panic occurs. Also note
+// that the zero value of TransientVector is actually valid, even though it isn't assigned an
+// ID. This is because:
+//     1. An empty TransientVector can't possibly point to nodes owned by another vector.
+//     2. Once made persistent it's nodes will have a nil id, the same as persistent vectors.
 type TransientVector[T any] struct {
-	id      *id      // Used to ensure transients mutate only nodes with their unique ID.
+	// id is used to ensure transients mutate only nodes with their unique ID.
+	// This works because a new ID is allocated whenever a transient vector is
+	// made which uses a unique pointer address for the ID. This ID is only
+	// deallocated when all nodes that reference the id are reclaimed as well.
+	// This ensures that as long as a node exists with an already allocated ID,
+	// then it won't be allocated by a different transient vector.
+	id      *id
 	invalid bool     // Set to true to after a mutation.
 	count   int      // Number of elements in this vector
 	depth   int      // Depth of the tree under root
@@ -272,12 +282,15 @@ type TransientVector[T any] struct {
 	tail    []T      // Quickly access elements at the end of the vector
 }
 
-func (v TransientVector[T]) invalidate() {
+func (v TransientVector[T]) ensureValid() {
 	if v.invalid {
 		panic("attempted operation on an invalid transient vector")
-	} else {
-		v.invalid = true
 	}
+}
+
+func (v TransientVector[T]) invalidate() {
+	v.ensureValid()
+	v.invalid = true
 }
 
 // Persistent creates a new persistent Vector from a transient vector.
@@ -294,12 +307,16 @@ func (v TransientVector[T]) Persistent() Vector[T] {
 
 // Len returns the number of values in v
 func (v TransientVector[T]) Len() int {
+	v.ensureValid()
+
 	return v.count
 }
 
 // Nth returns from the vector the value at the index provided. The index must
 // be greater than zero and less than v.count.
 func (v TransientVector[T]) Nth(index int) T {
+	v.ensureValid()
+
 	return findValues(v.count, v.depth, v.root, v.tail, index)[indexAt(0, index)]
 }
 
@@ -314,9 +331,7 @@ func (v TransientVector[T]) Peek() T {
 //     With one element: [1]
 //     With more than one element: [1 2 3]
 func (v TransientVector[T]) String() string {
-	if v.invalid {
-		panic("attempted operation on an invalid transient vector")
-	}
+	v.ensureValid()
 
 	var s = "["
 	for i := 0; i < v.count; i += 1 {
@@ -334,13 +349,13 @@ func (v TransientVector[T]) String() string {
 // Assoc returns a transient vector with a value updated at the given index,
 // invalidating the transient vector that was operated on.
 func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
+	v.invalidate()
+
 	if index < 0 || index >= v.count {
 		panic(fmt.Sprintf("index out of range [%d] with length %d", index, v.count))
 	}
 
-	v.invalidate()
-
-	if index >= tailOffset(v.count, v.tail) {
+	if indexInTail(index, v.count, v.tail) {
 		v.tail[indexAt(0, index)] = value
 		return TransientVector[T]{
 			invalid: false,

@@ -43,7 +43,7 @@ set ylabel y_label
 
 
 # range for values in y axis
-set yrange[y_range_min:y_range_max]
+#set yrange[y_range_min:y_range_max]
 
 
 # to avoid displaying large numbers in exponential format
@@ -58,6 +58,7 @@ set xtics rotate
 set style fill solid
 set boxwidth 0.5
 
+set logscale y 2
 
 # plot graphic for each line of input file
 plot for [i=0:*] file_path every ::i::i using column_1:column_2:xtic(2) with boxes, file_path using 1:column_2:column_2 with labels offset 0, char 1
