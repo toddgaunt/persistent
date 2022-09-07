@@ -11,8 +11,6 @@
 # y_range_max - maximum range for values in y axis
 # column_1 - the first column to be used in plot command
 # column_2 - the second column to be used in plot command
-#
-# Author: Tiago Melo ([email protected])
 ##
 
 
@@ -62,4 +60,4 @@ set boxwidth 0.5
 
 
 # plot graphic for each line of input file
-plot for [i=0:*] file_path every ::i::i using column_1:column_2:xtic(2) with boxes
+plot for [i=0:*] file_path every ::i::i using column_1:column_2:xtic(2) with boxes, file_path using 1:column_2:column_2 with labels offset 0, char 1
