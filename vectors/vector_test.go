@@ -26,36 +26,120 @@ func TestVectorNth(t *testing.T) {
 }
 
 func TestVectorConj(t *testing.T) {
-	var vec1 = vectors.New(testSlice...)
-	var vec2 = vec1.Conj(2)
-	if got, want := vec1.Peek(), testSlice[len(testSlice)-1]; got != want {
-		t.Fatalf("got vec1.Peek()=%v, want vec1.Peek()=%v", got, want)
+	var testCases = []struct {
+		name  string
+		slice []int
+		value int
+	}{
+		{
+			name:  "ConjTrie",
+			slice: make([]int, 32+32),
+			value: 42,
+		},
+		{
+			name:  "ConjDeepTrie",
+			slice: make([]int, 32*32+32),
+			value: 42,
+		},
+		{
+			name:  "ConjTail",
+			slice: make([]int, 32),
+			value: 42,
+		},
 	}
-	if got, want := vec2.Peek(), 2; got != want {
-		t.Fatalf("got vec2.Peek()=%v, want vec2.Peek()=%v", got, want)
-	}
-	if got, want := vec1.Len(), len(testSlice); got != want {
-		t.Fatalf("got vec1.Len()=%v, want vec1.Len()=%v", got, want)
-	}
-	if got, want := vec2.Len(), len(testSlice)+1; got != want {
-		t.Fatalf("got vec2.Len()=%v, want vec2.Len()=%v", got, want)
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			var vec1 = vectors.New(tc.slice...)
+			var vec2 = vec1.Conj(tc.value)
+			if vec1.Len() > 0 {
+				if got, want := vec1.Peek(), tc.slice[len(testSlice)-1]; got != want {
+					t.Fatalf("got vec1.Peek()=%v, want vec1.Peek()=%v", got, want)
+				}
+			}
+			if got, want := vec2.Peek(), tc.value; got != want {
+				t.Fatalf("got vec2.Peek()=%v, want vec2.Peek()=%v", got, want)
+			}
+			if got, want := vec1.Len(), len(tc.slice); got != want {
+				t.Fatalf("got vec1.Len()=%v, want vec1.Len()=%v", got, want)
+			}
+			if got, want := vec2.Len(), len(tc.slice)+1; got != want {
+				t.Fatalf("got vec2.Len()=%v, want vec2.Len()=%v", got, want)
+			}
+		})
 	}
 }
 
 func TestVectorAssoc(t *testing.T) {
-	var vec1 = vectors.New(testSlice...)
-	var vec2 = vec1.Assoc(0, 42)
-	if got, want := vec1.Nth(0), testSlice[0]; got != want {
-		t.Fatalf("got vec1.Peek()=%v, want vec1.Peek()=%v", got, want)
+	var testCases = []struct {
+		name   string
+		slice  []int
+		index  int
+		value  int
+		panics bool
+	}{
+		{
+			name:   "AssocTrie",
+			slice:  make([]int, 32+32),
+			index:  1,
+			value:  42,
+			panics: false,
+		},
+		{
+			name:   "AssocDeepTrie",
+			slice:  make([]int, 32*32+32),
+			index:  1,
+			value:  42,
+			panics: false,
+		},
+		{
+			name:   "AssocTail",
+			slice:  make([]int, 32),
+			index:  31,
+			value:  42,
+			panics: false,
+		},
+		{
+			name:   "AssocEmpty",
+			slice:  []int{},
+			index:  0,
+			value:  0,
+			panics: true,
+		},
 	}
-	if got, want := vec2.Nth(0), 42; got != want {
-		t.Fatalf("got vec2.Peek()=%v, want vec2.Peek()=%v", got, want)
-	}
-	if got, want := vec1.Len(), len(testSlice); got != want {
-		t.Fatalf("got vec1.Len()=%v, want vec1.Len()=%v", got, want)
-	}
-	if got, want := vec2.Len(), len(testSlice); got != want {
-		t.Fatalf("got vec2.Len()=%v, want vec2.Len()=%v", got, want)
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			defer func() {
+				r := recover()
+				if r != nil {
+					if !tc.panics {
+						t.Fatalf("got panic %v when none was expected", r)
+					}
+				} else {
+					if tc.panics {
+						t.Fatalf("got nil panic when one was expected")
+					}
+				}
+			}()
+
+			var vec1 = vectors.New(tc.slice...)
+			var vec2 = vec1.Assoc(tc.index, tc.value)
+			if got, want := vec1.Nth(tc.index), tc.slice[0]; got != want {
+				t.Fatalf("got vec1.Nth(index)=%v, want vec1.Nth(index)=%v", got, want)
+			}
+			if got, want := vec2.Nth(tc.index), tc.value; got != want {
+				t.Fatalf("got vec2.Nth(index)=%v, want vec2.Nth(index)=%v", got, want)
+			}
+			if got, want := vec1.Len(), len(tc.slice); got != want {
+				t.Fatalf("got vec1.Len()=%v, want vec1.Len()=%v", got, want)
+			}
+			if got, want := vec2.Len(), len(tc.slice); got != want {
+				t.Fatalf("got vec2.Len()=%v, want vec2.Len()=%v", got, want)
+			}
+		})
 	}
 }
 
