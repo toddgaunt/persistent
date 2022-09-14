@@ -167,14 +167,17 @@ func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 		}
 	}
 
-	// Walk through the tree, cloning the path to the updated node.
+	// Create a new root so the original vector isn't changed.
 	var newRoot = cloneNode(persistent, v.root)
+
+	// Walk through the tree, cloning the path to the updated node.
 	var walk = newRoot
 	for level := v.depth; level > 0; level -= 1 {
 		var i = indexAt(level, index)
 		walk.nodes[i] = cloneNode(persistent, walk.nodes[i])
 		walk = walk.nodes[i]
 	}
+	// Finally, update the value in the leaf node.
 	walk.values[indexAt(0, index)] = value
 
 	return Vector[T]{
@@ -212,15 +215,12 @@ func (v Vector[T]) Conj(val T) Vector[T] {
 		newRoot.nodes[0] = v.root
 	}
 
-	// Walk through the tree with an indirect pointer to find location the
-	// tail will end up being moved to, making copies of nodes along the
-	// path so that other vector references aren't mutated.
+	// Walk through the tree with an indirect pointer to find location the tail
+	// will end up being moved to, creating new nodes along the way as needed.
 	var indirect = &newRoot
 	for level := newDepth; level > 0; level -= 1 {
 		if *indirect == nil {
 			*indirect = newNode[T](persistent)
-		} else {
-			*indirect = cloneNode(persistent, *indirect)
 		}
 		indirect = &(*indirect).nodes[indexAt(level, v.count-1)]
 	}
