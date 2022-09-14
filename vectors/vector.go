@@ -60,10 +60,6 @@ type id int
 
 var persistent *id = nil
 
-func newID() *id {
-	return new(id)
-}
-
 type node[T any] struct {
 	// id indicates if a node was made by transient vector if it is not zero.
 	id     *id
@@ -112,7 +108,7 @@ type Vector[T any] struct {
 
 // New creates a new persistent vector constructed from the values provided.
 func New[T any](vals ...T) Vector[T] {
-	var v TransientVector[T]
+	var v = Vector[T]{}.Transient()
 
 	for i := 0; i < len(vals); i++ {
 		v = v.Conj(vals[i])
@@ -122,12 +118,14 @@ func New[T any](vals ...T) Vector[T] {
 }
 
 func (v Vector[T]) Transient() TransientVector[T] {
+	id := new(id)
 	return TransientVector[T]{
+		id:      id,
 		invalid: false,
 		count:   v.count,
 		depth:   v.depth,
 		tail:    cloneTail(v.tail),
-		root:    cloneNode(newID(), v.root),
+		root:    v.root,
 	}
 }
 
@@ -358,6 +356,7 @@ func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
 	if indexInTail(index, v.count, v.tail) {
 		v.tail[indexAt(0, index)] = value
 		return TransientVector[T]{
+			id:      v.id,
 			invalid: false,
 			depth:   v.depth,
 			count:   v.count,
@@ -366,11 +365,16 @@ func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
 		}
 	}
 
+	if v.root.id != v.id {
+		// Create a new root so the original vector isn't changed.
+		v.root = cloneNode(v.id, v.root)
+	}
+
 	// Walk through the tree and update the leaf value found.
 	var walk = v.root
 	for level := v.depth; level > 0; level -= 1 {
 		var i = indexAt(level, index)
-		if walk.nodes[i].id == persistent {
+		if walk.nodes[i].id != v.id {
 			walk.nodes[i] = cloneNode(v.id, walk.nodes[i])
 		}
 		walk = walk.nodes[i]
@@ -378,6 +382,7 @@ func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
 	walk.values[indexAt(0, index)] = value
 
 	return TransientVector[T]{
+		id:      v.id,
 		invalid: false,
 		depth:   v.depth,
 		count:   v.count,
@@ -396,6 +401,7 @@ func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 		// The tail still has space, so just append to it.
 
 		return TransientVector[T]{
+			id:      v.id,
 			invalid: false,
 			depth:   v.depth,
 			count:   v.count + 1,
@@ -424,6 +430,9 @@ func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 		if *indirect == nil {
 			*indirect = newNode[T](v.id)
 		}
+		if (*indirect).id != v.id {
+			*indirect = cloneNode(v.id, *indirect)
+		}
 		indirect = &(*indirect).nodes[indexAt(level, v.count-1)]
 	}
 	*indirect = newLeaf(v.id, v.tail)
@@ -434,6 +443,7 @@ func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 	newTail = append(newTail, val)
 
 	return TransientVector[T]{
+		id:      v.id,
 		invalid: false,
 		depth:   newDepth,
 		count:   v.count + 1,

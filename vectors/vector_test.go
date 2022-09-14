@@ -8,7 +8,7 @@ import (
 )
 
 var testSlice = func() []int {
-	var slice = make([]int, 32)
+	var slice = make([]int, 65)
 	for i := 0; i < len(slice); i++ {
 		slice[i] = i + 1
 	}
@@ -54,7 +54,7 @@ func TestVectorConj(t *testing.T) {
 			var vec1 = vectors.New(tc.slice...)
 			var vec2 = vec1.Conj(tc.value)
 			if vec1.Len() > 0 {
-				if got, want := vec1.Peek(), tc.slice[len(testSlice)-1]; got != want {
+				if got, want := vec1.Peek(), tc.slice[len(tc.slice)-1]; got != want {
 					t.Fatalf("got vec1.Peek()=%v, want vec1.Peek()=%v", got, want)
 				}
 			}
@@ -241,14 +241,17 @@ func FuzzVectorAssocPersistent(f *testing.F) {
 		}()
 
 		var vec = vectors.New(init...)
-		var value = vec.Nth(index) + 1
+
+		var originalValue = vec.Nth(index)
+		var value = originalValue + 1
+
 		var result = vec.Assoc(index, value)
 
 		if got, want := vec.Len(), result.Len(); got != want {
 			t.Fatalf("got vec.Len() == %d != result.Len(), want vec.Len() == %d == result.Len()", got, want)
 		}
-		if got, want := vec.Nth(index), value; got == want {
-			t.Fatalf("got vec.Nth(index) == %v, want vec.Nth(index) != %v", got, want)
+		if got := vec.Nth(index); got != originalValue {
+			t.Fatalf("got vec.Nth(index) == %v, want vec.Nth(index) == %v", got, originalValue)
 		}
 		if got, want := result.Nth(index), value; got != want {
 			t.Fatalf("got result.Nth(index) == %v, result.Nth(index) == %v", got, want)
@@ -267,17 +270,20 @@ func FuzzVectorAssocTransient(f *testing.F) {
 			}
 		}()
 
-		var value = init[index] + 1
-
 		var vec = vectors.New(init...)
+
+		var originalValue = vec.Nth(index)
+		var value = originalValue + 1
+
 		var tvec = vec.Transient()
+
 		var result = tvec.Assoc(index, value)
 
 		if got, want := vec.Len(), result.Len(); got != want {
 			t.Fatalf("got vec.Len() == %d != result.Len(), want vec.Len() == %d == result.Len()", got, want)
 		}
-		if got, want := vec.Nth(index), value; got == want {
-			t.Fatalf("got vec.Nth(index) == %v, want vec.Nth(index) != %v", got, want)
+		if got := vec.Nth(index); got != originalValue {
+			t.Fatalf("got vec.Nth(index) == %v, want vec.Nth(index) == %v", got, originalValue)
 		}
 		if got, want := result.Nth(index), value; got != want {
 			t.Fatalf("got result.Nth(index) == %v, result.Nth(index) == %v", got, want)
