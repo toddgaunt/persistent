@@ -106,8 +106,8 @@ func cloneNode[T any](id *id, original *node[T]) *node[T] {
 type Vector[T any] struct {
 	count int      // Number of elements in this vector
 	depth int      // Depth of the tree under root
-	root  *node[T] // Root of the tree; Contains either child nodes or elements
 	tail  []T      // Quickly access elements at the end of the vector
+	root  *node[T] // Root of the tree; Contains either child nodes or elements
 }
 
 // New creates a new persistent vector constructed from the values provided.
@@ -126,8 +126,8 @@ func (v Vector[T]) Transient() TransientVector[T] {
 		invalid: false,
 		count:   v.count,
 		depth:   v.depth,
-		root:    cloneNode(newID(), v.root),
 		tail:    cloneTail(v.tail),
+		root:    cloneNode(newID(), v.root),
 	}
 }
 
@@ -162,8 +162,8 @@ func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 		return Vector[T]{
 			depth: v.depth,
 			count: v.count,
-			root:  v.root,
 			tail:  newTail,
+			root:  v.root,
 		}
 	}
 
@@ -183,8 +183,8 @@ func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 	return Vector[T]{
 		depth: v.depth,
 		count: v.count,
-		root:  newRoot,
 		tail:  v.tail,
+		root:  newRoot,
 	}
 }
 
@@ -198,8 +198,8 @@ func (v Vector[T]) Conj(val T) Vector[T] {
 		return Vector[T]{
 			depth: v.depth,
 			count: v.count + 1,
-			root:  v.root,
 			tail:  append(newTail, val),
+			root:  v.root,
 		}
 	}
 
@@ -234,8 +234,8 @@ func (v Vector[T]) Conj(val T) Vector[T] {
 	return Vector[T]{
 		depth: newDepth,
 		count: v.count + 1,
-		root:  newRoot,
 		tail:  newTail,
+		root:  newRoot,
 	}
 }
 
@@ -278,8 +278,8 @@ type TransientVector[T any] struct {
 	invalid bool     // Set to true to after a mutation.
 	count   int      // Number of elements in this vector
 	depth   int      // Depth of the tree under root
-	root    *node[T] // Root of the tree containg either child nodes or elements
 	tail    []T      // Quickly access elements at the end of the vector
+	root    *node[T] // Root of the tree containg either child nodes or elements
 }
 
 func (v TransientVector[T]) ensureValid() {
@@ -300,8 +300,8 @@ func (v TransientVector[T]) Persistent() Vector[T] {
 	return Vector[T]{
 		depth: v.depth,
 		count: v.count,
-		root:  cloneNode(persistent, v.root),
 		tail:  cloneTail(v.tail),
+		root:  cloneNode(persistent, v.root),
 	}
 }
 
@@ -361,8 +361,8 @@ func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
 			invalid: false,
 			depth:   v.depth,
 			count:   v.count,
-			root:    v.root,
 			tail:    v.tail,
+			root:    v.root,
 		}
 	}
 
@@ -381,8 +381,8 @@ func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
 		invalid: false,
 		depth:   v.depth,
 		count:   v.count,
-		root:    v.root,
 		tail:    v.tail,
+		root:    v.root,
 	}
 }
 
@@ -399,8 +399,8 @@ func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 			invalid: false,
 			depth:   v.depth,
 			count:   v.count + 1,
-			root:    v.root,
 			tail:    append(v.tail, val),
+			root:    v.root,
 		}
 	}
 
@@ -437,7 +437,7 @@ func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 		invalid: false,
 		depth:   newDepth,
 		count:   v.count + 1,
-		root:    newRoot,
 		tail:    newTail,
+		root:    newRoot,
 	}
 }
