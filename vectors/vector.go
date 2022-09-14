@@ -86,14 +86,19 @@ func cloneNode[T any](id *id, original *node[T]) *node[T] {
 		return nil
 	}
 
-	var clone = &node[T]{
-		id:     id,
-		nodes:  make([]*node[T], len(original.nodes)),
-		values: make([]T, len(original.values)),
+	clone := &node[T]{
+		id: id,
 	}
 
-	copy(clone.nodes, original.nodes)
-	copy(clone.values, original.values)
+	if original.nodes != nil {
+		clone.nodes = make([]*node[T], len(original.nodes))
+		copy(clone.nodes, original.nodes)
+	}
+
+	if original.values != nil {
+		clone.values = make([]T, len(original.values))
+		copy(clone.values, original.values)
+	}
 
 	return clone
 }
