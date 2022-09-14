@@ -25,52 +25,6 @@ func TestVectorNth(t *testing.T) {
 	}
 }
 
-func TestVectorConj(t *testing.T) {
-	var testCases = []struct {
-		name  string
-		slice []int
-		value int
-	}{
-		{
-			name:  "ConjTrie",
-			slice: make([]int, 32+32),
-			value: 42,
-		},
-		{
-			name:  "ConjDeepTrie",
-			slice: make([]int, 32*32+32),
-			value: 42,
-		},
-		{
-			name:  "ConjTail",
-			slice: make([]int, 32),
-			value: 42,
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			var vec1 = vectors.New(tc.slice...)
-			var vec2 = vec1.Conj(tc.value)
-			if vec1.Len() > 0 {
-				if got, want := vec1.Peek(), tc.slice[len(tc.slice)-1]; got != want {
-					t.Fatalf("got vec1.Peek()=%v, want vec1.Peek()=%v", got, want)
-				}
-			}
-			if got, want := vec2.Peek(), tc.value; got != want {
-				t.Fatalf("got vec2.Peek()=%v, want vec2.Peek()=%v", got, want)
-			}
-			if got, want := vec1.Len(), len(tc.slice); got != want {
-				t.Fatalf("got vec1.Len()=%v, want vec1.Len()=%v", got, want)
-			}
-			if got, want := vec2.Len(), len(tc.slice)+1; got != want {
-				t.Fatalf("got vec2.Len()=%v, want vec2.Len()=%v", got, want)
-			}
-		})
-	}
-}
-
 func TestVectorAssoc(t *testing.T) {
 	var testCases = []struct {
 		name   string
@@ -143,6 +97,52 @@ func TestVectorAssoc(t *testing.T) {
 	}
 }
 
+func TestVectorConj(t *testing.T) {
+	var testCases = []struct {
+		name  string
+		slice []int
+		value int
+	}{
+		{
+			name:  "ConjTrie",
+			slice: make([]int, 32+32),
+			value: 42,
+		},
+		{
+			name:  "ConjDeepTrie",
+			slice: make([]int, 32*32+32),
+			value: 42,
+		},
+		{
+			name:  "ConjTail",
+			slice: make([]int, 32),
+			value: 42,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			var vec1 = vectors.New(tc.slice...)
+			var vec2 = vec1.Conj(tc.value)
+			if vec1.Len() > 0 {
+				if got, want := vec1.Peek(), tc.slice[len(tc.slice)-1]; got != want {
+					t.Fatalf("got vec1.Peek()=%v, want vec1.Peek()=%v", got, want)
+				}
+			}
+			if got, want := vec2.Peek(), tc.value; got != want {
+				t.Fatalf("got vec2.Peek()=%v, want vec2.Peek()=%v", got, want)
+			}
+			if got, want := vec1.Len(), len(tc.slice); got != want {
+				t.Fatalf("got vec1.Len()=%v, want vec1.Len()=%v", got, want)
+			}
+			if got, want := vec2.Len(), len(tc.slice)+1; got != want {
+				t.Fatalf("got vec2.Len()=%v, want vec2.Len()=%v", got, want)
+			}
+		})
+	}
+}
+
 func TestVectorString(t *testing.T) {
 	type testStruct struct {
 		name string
@@ -176,18 +176,7 @@ func TestVectorString(t *testing.T) {
 	}
 }
 
-func TestVectorConjTransient(t *testing.T) {
-	var vec = vectors.New(testSlice...)
-	var want = vec.Nth(vec.Len() - 1)
-
-	var tvec = vec.Transient()
-	tvec.Conj(42)
-	if got := vec.Nth(vec.Len() - 1); got != want {
-		t.Fatalf("got vec.Nth(vec.Len()-1)=%d, want vec.Nth(vec.Len()-1)=%d", got, want)
-	}
-}
-
-func TestVectorAssocTransient(t *testing.T) {
+func TestTransientVectorAssoc(t *testing.T) {
 	var vec = vectors.New(testSlice...)
 	var want = vec.Nth(0)
 
@@ -195,6 +184,17 @@ func TestVectorAssocTransient(t *testing.T) {
 	tvec.Assoc(0, 42)
 	if got := vec.Nth(0); got != want {
 		t.Fatalf("got vec.Nth(0)=%d, want vec.Nth(0)=%d", got, want)
+	}
+}
+
+func TestTransientVectorConj(t *testing.T) {
+	var vec = vectors.New(testSlice...)
+	var want = vec.Nth(vec.Len() - 1)
+
+	var tvec = vec.Transient()
+	tvec.Conj(42)
+	if got := vec.Nth(vec.Len() - 1); got != want {
+		t.Fatalf("got vec.Nth(vec.Len()-1)=%d, want vec.Nth(vec.Len()-1)=%d", got, want)
 	}
 }
 
@@ -209,27 +209,7 @@ func FuzzVectorNth(f *testing.F) {
 	})
 }
 
-func FuzzVectorConj(f *testing.F) {
-	f.Add([]byte{}, byte(0))
-	f.Add(
-		[]byte{1, 2, 3, 4},
-		byte(5),
-	)
-	f.Add(
-		[]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
-		byte(33),
-	)
-	f.Fuzz(func(t *testing.T, init []byte, value byte) {
-		var vec = vectors.New(init...)
-		var result = vec.Conj(value)
-		if got, want := result.Len(), vec.Len()+1; got != want {
-			t.Fatalf("expected conj to make new vector one element longer, got %d, want %d", got, want)
-		}
-		vec = result
-	})
-}
-
-func FuzzVectorAssocPersistent(f *testing.F) {
+func FuzzVectorAssoc(f *testing.F) {
 	f.Fuzz(func(t *testing.T, init []byte, index int) {
 		defer func() {
 			r := recover()
@@ -259,7 +239,43 @@ func FuzzVectorAssocPersistent(f *testing.F) {
 	})
 }
 
-func FuzzVectorAssocTransient(f *testing.F) {
+func FuzzVectorConj(f *testing.F) {
+	f.Add([]byte{}, byte(0))
+	f.Add(
+		[]byte{1, 2, 3, 4},
+		byte(5),
+	)
+	f.Add(
+		[]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
+		byte(33),
+	)
+	f.Fuzz(func(t *testing.T, init []byte, value byte) {
+		var vec = vectors.New(init...)
+		var result = vec.Conj(value)
+
+		if got, want := vec.Len(), len(init); got != want {
+			t.Fatalf("expected source to not be modified, got vec.Len() == %d, want vec.Len() == %d", got, want)
+		}
+
+		if got, want := result.Len(), vec.Len()+1; got != want {
+			t.Fatalf("expected result one elem longer, got result.Len() == %d, want result.Len() == %d", got, want)
+		}
+	})
+}
+
+func FuzzTransientVectorNth(f *testing.F) {
+	f.Fuzz(func(t *testing.T, b []byte) {
+		var vec = vectors.New(b...)
+		var tvec = vec.Transient()
+		for i := 0; i < tvec.Len(); i++ {
+			if tvec.Nth(i) != b[i] {
+				t.Fatalf("want element %d at index %d, got %d", b[i], i, tvec.Nth(i))
+			}
+		}
+	})
+}
+
+func FuzzTransientVectorAssoc(f *testing.F) {
 	f.Fuzz(func(t *testing.T, init []byte, index int) {
 		defer func() {
 			r := recover()
@@ -287,6 +303,31 @@ func FuzzVectorAssocTransient(f *testing.F) {
 		}
 		if got, want := result.Nth(index), value; got != want {
 			t.Fatalf("got result.Nth(index) == %v, result.Nth(index) == %v", got, want)
+		}
+	})
+}
+
+func FuzzTransientVectorConj(f *testing.F) {
+	f.Add([]byte{}, byte(0))
+	f.Add(
+		[]byte{1, 2, 3, 4},
+		byte(5),
+	)
+	f.Add(
+		[]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
+		byte(33),
+	)
+	f.Fuzz(func(t *testing.T, init []byte, value byte) {
+		var vec = vectors.New(init...)
+		var tvec = vec.Transient()
+		var result = tvec.Conj(value)
+
+		if got, want := vec.Len(), len(init); got != want {
+			t.Fatalf("expected source to not be modified, got vec.Len() == %d, want vec.Len() == %d", got, want)
+		}
+
+		if got, want := result.Len(), vec.Len()+1; got != want {
+			t.Fatalf("expected result one elem longer, got result.Len() == %d, want result.Len() == %d", got, want)
 		}
 	})
 }
