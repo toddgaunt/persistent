@@ -1,7 +1,7 @@
 # Persistent
 
-Provides implementations of Clojure's persistent data structures (namely:
-lists, vectors, and maps) for Go, using generic types.
+`persistent` provides implementations of Clojure's persistent data structures
+(namely: lists, vectors, and maps) for Go, using generic types.
 
 ## Lists
 See `go doc github.com/toddgaunt/persistent/lists`
