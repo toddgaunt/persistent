@@ -49,14 +49,18 @@ function increment-version() {
 	version="$major.$minor.$patch"
 
 	local commit_msg="Version: $old_version -> $version"
-	local git_tag="v$version"
 	echo "$commit_msg"
 	echo "$version" > VERSION.txt
 
 	git add VERSION.txt
 	git commit -m "$commit_msg"
-	git tag "$git_tag"
-	git push origin "$git_tag"
+	git tag "v$version"
+}
+
+function publish-version() {
+			local version="v$(cat VERSION.txt)"
+			git push origin "$version"
+			GOPROXY="proxy.golang.org" go list -m "github.com/toddgaunt/persistent@$version"
 }
 
 function usage() {
@@ -75,7 +79,7 @@ function main() {
 			increment-version $args
 			;;
 		publish)
-			GOPROXY=proxy.golang.org go list -m github.com/toddgaunt/persistent@"v$(cat VERSION.txt)"
+			publish-version $args
 			;;
 		-h|--help|help)
 			usage
