@@ -41,12 +41,14 @@ function version() {
 	version="$major.$minor.$patch"
 
 	local commit_msg="Version: $old_version -> $version"
+	local git_tag="v$version"
 	echo "$commit_msg"
 	echo "$version" > VERSION.txt
 
 	git add VERSION.txt
 	git commit -m "$commit_msg"
-	git tag "v$version"
+	git tag "$git_tag"
+	git push origin "$git_tag"
 }
 
 version $@
