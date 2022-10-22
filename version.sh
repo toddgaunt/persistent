@@ -2,8 +2,16 @@
 
 # Run this script inside of the directory it resides in.
 cd $(dirname $(realpath $0))
+# Set much more strict behavior for failed commands and unexpanded variables.
+set -eu
+# Allow's the script to refer to itself.
+me=$(basename $0)
 
-function version() {
+function log() {
+	echo "[$me] $@"
+}
+
+function increment-version() {
 	local version=$(cat VERSION.txt)
 	local old_version="$version"
 	local a=( ${version//./ } )
@@ -51,4 +59,33 @@ function version() {
 	git push origin "$git_tag"
 }
 
-version $@
+function usage() {
+	echo "Usage: $me [version|increment|publish|help]"
+}
+
+function main() {
+	local subcommand=${1-version}
+	local args=${@:2}
+
+	case $subcommand in
+		version)
+			echo "$(cat VERSION.txt)"
+			;;
+		increment)
+			increment-version $args
+			;;
+		publish)
+			GOPROXY=proxy.golang.org go list -m github.com/toddgaunt/persistent@"v$(cat VERSION.txt)"
+			;;
+		-h|--help|help)
+			usage
+			;;
+		*)
+			log "$subcommand is not a valid subcommand."
+			usage
+			exit 1
+			;;
+	esac
+}
+
+main $@
