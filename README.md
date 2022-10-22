@@ -1,3 +1,5 @@
+[![Go](https://github.com/toddgaunt/persistent/actions/workflows/go.yml/badge.svg)](https://github.com/toddgaunt/persistent/actions/workflows/go.yml)
+
 # Persistent
 
 Provides implementations of Clojure's persistent data structures (namely:
