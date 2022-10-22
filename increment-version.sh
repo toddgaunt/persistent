@@ -37,6 +37,7 @@ function version() {
 	version="$major.$minor.$patch"
 	echo "$version"
 	echo "$version" > VERSION.txt
+	git tag "v$version"
 }
 
 version $@
