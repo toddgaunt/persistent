@@ -1,7 +1,14 @@
 package lists
 
-import "fmt"
+import (
+	"fmt"
+)
 
+// List is a persistent data structure that can be treated as a value
+// (similarly to an int) after any of the operations provided by this package.
+// This means even when Conj'ing an item to a List, the previous version
+// of that List can be used in more operations and referenced without having
+// been mutated from any operations it was used as input for.
 type List[T any] struct {
 	count int
 	first T
@@ -9,10 +16,10 @@ type List[T any] struct {
 }
 
 // New creates a new persistent list constructed using vals with
-// the first element of vals being the head of the list, and the last
-// element of vals being the end of the list. As an example, New(1,
+// the first of vals being the head of the list, and the last
+// of vals being the end of the list. As an example, New(1,
 // 2, 3, 4) results in a (1, 2, 3, 4) and not (4, 3, 2, 1) as what
-// would be constructed if done manually using Cons for each value.
+// would be constructed if done manually using Conj for each value.
 func New[T any](vals ...T) List[T] {
 	var l List[T]
 
@@ -23,9 +30,7 @@ func New[T any](vals ...T) List[T] {
 	return l
 }
 
-// Len returns the number of items in the list. Note that the name Len was
-// chosen rather than Len(), as it is called in Clojure, to fit into the Go
-// ecosystem better.
+// Len returns the number of items in the list.
 func (l List[T]) Len() int {
 	return l.count
 }
@@ -53,9 +58,9 @@ func (l List[T]) Conj(val T) List[T] {
 
 // String returns a representation of a list similar to standard Go types
 // when using the "%v" formatting verb as in the standard fmt package:
-//     With no elements: ()
-//     With one element: (1)
-//     With more than one element: (1 2 3)
+//     With no items: ()
+//     With one item: (1)
+//     With more than one item: (1 2 3)
 func (l List[T]) String() string {
 	if l.count == 0 {
 		return "()"
@@ -76,7 +81,7 @@ func IsEmpty[T any](l List[T]) bool {
 	return l.count == 0
 }
 
-// Equal compares two lists to see if the contain the same elements, analogous
+// Equal compares two lists to see if the contain the same items, analogous
 // to bytes.Equal from the standard Go bytes package.
 func Equal[T comparable](a, b List[T]) bool {
 	if a.Len() != b.Len() {

@@ -17,7 +17,7 @@ func indexAt(level, i int) int {
 	return (i >> (level * nodeBits)) & nodeMask
 }
 
-// indexInTail returns the total number of elements within a Vec minus the tail.
+// indexInTail returns the total number of items within a Vec minus the tail.
 func indexInTail[T any](index int, count int, tail []T) bool {
 	return index >= (count - len(tail))
 }
@@ -105,10 +105,10 @@ func cloneNode[T any](id *id, original *node[T]) *node[T] {
 
 // Vector is a persistent vector.
 type Vector[T any] struct {
-	count int      // Number of elements in this vector
+	count int      // Number of items in this vector
 	depth int      // Depth of the tree under root
-	tail  []T      // Quickly access elements at the end of the vector
-	root  *node[T] // Root of the tree; Contains either child nodes or elements
+	tail  []T      // Quickly access items at the end of the vector
+	root  *node[T] // Root of the tree; Contains either child nodes or items
 }
 
 // New creates a new persistent vector constructed from the values provided.
@@ -244,9 +244,9 @@ func (v Vector[T]) Conj(val T) Vector[T] {
 
 // String returns a representation of a vector in the same form as a Go slice
 // when using the "%v" formatting verb as in the standard fmt package:
-//     With no elements: []
-//     With one element: [1]
-//     With more than one element: [1 2 3]
+//     With no items: []
+//     With one item: [1]
+//     With more than one item: [1 2 3]
 func (v Vector[T]) String() string {
 	var s = "["
 	for i := 0; i < v.count; i += 1 {
@@ -279,10 +279,10 @@ type TransientVector[T any] struct {
 	// then it won't be allocated by a different transient vector.
 	id      *id
 	invalid bool     // Set to true to after a mutation.
-	count   int      // Number of elements in this vector
+	count   int      // Number of items in this vector
 	depth   int      // Depth of the tree under root
-	tail    []T      // Quickly access elements at the end of the vector
-	root    *node[T] // Root of the tree containg either child nodes or elements
+	tail    []T      // Quickly access items at the end of the vector
+	root    *node[T] // Root of the tree containg either child nodes or items
 }
 
 func (v TransientVector[T]) ensureValid() {
@@ -330,9 +330,9 @@ func (v TransientVector[T]) Peek() T {
 
 // String returns a representation of a vector in the same form as a Go slice
 // when using the "%v" formatting verb as in the standard fmt package:
-//     With no elements: []
-//     With one element: [1]
-//     With more than one element: [1 2 3]
+//     With no items: []
+//     With one item: [1]
+//     With more than one item: [1 2 3]
 func (v TransientVector[T]) String() string {
 	v.ensureValid()
 
