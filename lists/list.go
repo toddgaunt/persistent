@@ -1,3 +1,11 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+// Package list provides a persistent List datastructure similar to the one
+// found in the Clojure programming language. The actual implementation is
+// a very simple linked list, with an API designed carefully to integrate
+// well with other persistent data structures.
 package lists
 
 import (

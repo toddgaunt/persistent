@@ -8,7 +8,7 @@ function version() {
 	patch=${a[2]}
 
 	while true; do
-		read -p "$prompt [(M)ajor/m(I)nor/(P)atch]" part
+		read -p "Increment version [(M)ajor/m(I)nor/(P)atch]?" part
 		if [[ "$part" == "" ]]; then
 			part="M"
 		fi

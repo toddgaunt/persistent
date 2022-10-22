@@ -3,7 +3,7 @@ package lists_test
 import (
 	"testing"
 
-	"bastionburrow.com/persistent/lists"
+	"github.com/toddgaunt/persistent/lists"
 )
 
 func TestNew(t *testing.T) {

@@ -2,6 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+// Package vectors provides a persistent vector datastructure similar to the
+// one found in the Clojure programming language. The actual implementation
+// uses similar data structures as well, though implemented using Go idioms and
+// techniques.
 package vectors
 
 import "fmt"
@@ -261,12 +265,16 @@ func (v Vector[T]) String() string {
 	return s
 }
 
-// TransientVector is a transient vector. This is similar in structure to a normal
-// persistent vector, however it is used in places where persistence isn't
-// needed, and more performant operations are required. Each time an operation
-// on a TransientVector is performed, a new one is created using the same memory. The old
-// TransientVector then becomes invalidated so if it is used again a panic occurs. Also note
-// that the zero value of TransientVector is actually valid, even though it isn't assigned an
+// TransientVector provides the same API as a persistent vector, however any
+// previous versions of itself become invalid after any operation that creates
+// a new transient vector from an old one. While similar in structure to a
+// normal persistent vector, it is meant to be used in places where persistence
+// isn't needed, and more performance for mutating operations are required.
+// Each time an operation on a TransientVector is performed, a new one is
+// created using the same underlying memory. The old TransientVector is then
+// marked invalidated so if it is used again with any of the operations this
+// package provides, a panic occurs. Also note that the zero value of
+// TransientVector is actually valid, even though it isn't assigned an
 // ID. This is because:
 //     1. An empty TransientVector can't possibly point to nodes owned by another vector.
 //     2. Once made persistent it's nodes will have a nil id, the same as persistent vectors.

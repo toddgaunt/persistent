@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"bastionburrow.com/persistent/vectors"
+	"github.com/toddgaunt/persistent/vectors"
 )
 
 var testSlice = func() []int {

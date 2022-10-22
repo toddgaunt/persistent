@@ -1,3 +1,3 @@
-module bastionburrow.com/persistent
+module github.com/toddgaunt/persistent
 
-go 1.18
+go 1.19
