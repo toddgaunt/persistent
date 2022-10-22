@@ -1,6 +1,6 @@
-[![Go](https://github.com/toddgaunt/persistent/actions/workflows/go.yml/badge.svg)](https://github.com/toddgaunt/persistent/actions/workflows/go.yml)
-
 # Persistent
+
+[![Go](https://github.com/toddgaunt/persistent/actions/workflows/go.yml/badge.svg)](https://github.com/toddgaunt/persistent/actions/workflows/go.yml)
 
 `persistent` provides implementations of Clojure's persistent data structures
 (namely: lists, vectors, and maps) for Go, using generic types.
