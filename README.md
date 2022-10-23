@@ -6,19 +6,15 @@
 implementations of Clojure's persistent data structures (namely: lists,
 vectors, and maps) for Go, using generic types.
 
-## Vectors Performance
+## Vectors Benchmarks
 
-Assoc:
 ![Assoc Performance Graph](./vectors/benchmark/assoc.png)
 
-Conj:
 ![Conj Performance Graph](./vectors/benchmark/conj.png)
 
-Nth:
 ![Nth Performance Graph](./vectors/benchmark/nth.png)
 
-
-## Developers
+## For Developers
 This section is intended as guidance for developers and contributors to this
 project.
 ### Update package version
