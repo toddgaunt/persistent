@@ -126,6 +126,7 @@ func New[T any](vals ...T) Vector[T] {
 	return v.Persistent()
 }
 
+// Transient creates a new transient vector using v as its base
 func (v Vector[T]) Transient() TransientVector[T] {
 	id := new(id)
 	return TransientVector[T]{
@@ -248,9 +249,9 @@ func (v Vector[T]) Conj(val T) Vector[T] {
 
 // String returns a representation of a vector in the same form as a Go slice
 // when using the "%v" formatting verb as in the standard fmt package:
-//     With no items: []
-//     With one item: [1]
-//     With more than one item: [1 2 3]
+//		With no items: []
+//		With one item: [1]
+//		With more than one item: [1 2 3]
 func (v Vector[T]) String() string {
 	var s = "["
 	for i := 0; i < v.count; i += 1 {
@@ -266,16 +267,17 @@ func (v Vector[T]) String() string {
 }
 
 // TransientVector provides the same API as a persistent vector, however any
-// previous versions of itself become invalid after any operation that creates
-// a new transient vector from an old one. While similar in structure to a
-// normal persistent vector, it is meant to be used in places where persistence
-// isn't needed, and more performance for mutating operations are required.
-// Each time an operation on a TransientVector is performed, a new one is
-// created using the same underlying memory. The old TransientVector is then
-// marked invalidated so if it is used again with any of the operations this
-// package provides, a panic occurs. Also note that the zero value of
-// TransientVector is actually valid, even though it isn't assigned an
-// ID. This is because:
+// previous versions of a transient vector become invalid after any operation
+// that creates a new one an old one. While similar in
+// structure to a persistent vector, it is meant to be used in places
+// where persistence isn't needed, and faster performance for mutating operations
+// is required. Each time an operation on a TransientVector is performed, a
+// new one is created using the same underlying memory. The old TransientVector
+// is then marked invalidated so if it is used again with any of the operations
+// this package provides, a panic occurs.
+//
+// Also note that the zero value of TransientVector is valid, even though it
+// isn't assigned an ID. This is because:
 //     1. An empty TransientVector can't possibly point to nodes owned by another vector.
 //     2. Once made persistent it's nodes will have a nil id, the same as persistent vectors.
 type TransientVector[T any] struct {
