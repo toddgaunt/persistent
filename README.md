@@ -2,14 +2,21 @@
 
 [![Go](https://github.com/toddgaunt/persistent/actions/workflows/go.yml/badge.svg)](https://github.com/toddgaunt/persistent/actions/workflows/go.yml)
 
-`persistent` provides implementations of Clojure's persistent data structures
-(namely: lists, vectors, and maps) for Go, using generic types.
+`persistent` is the top-level package for packages which provide
+implementations of Clojure's persistent data structures (namely: lists,
+vectors, and maps) for Go, using generic types.
 
-## Lists
-See `go doc github.com/toddgaunt/persistent/lists`
+## Vectors Performance
 
-## Vectors
-See `go doc github.com/toddgaunt/persistent/vectors`
+Assoc:
+![Assoc Performance Graph](./vectors/benchmark/assoc.png)
+
+Conj:
+![Conj Performance Graph](./vectors/benchmark/conj.png)
+
+Nth:
+![Nth Performance Graph](./vectors/benchmark/nth.png)
+
 
 ## Developers
 This section is intended as guidance for developers and contributors to this
