@@ -8,6 +8,17 @@ vectors, and maps) for Go, using generic types.
 
 ## Vectors Benchmarks
 
+The below benchmark graphs were constructed to compare persistent vectors,
+transient vectors, and native GO arrays. They are displayed with a logarithmic
+scale, and each graph is named after the operation being performed. The X axis
+is labeled with the name of the structure performing the operation the graph is
+named after, with a number following it indicating the size of the structure
+the operation is being performed on. The second number in the x-axis label is
+the number of threads used during the benchmark.
+
+So a label like "Persistent/100-12" means it was a persistent vector on a 100
+item vector on a 12 thread machine.
+
 ![Assoc Performance Graph](./vectors/benchmark/assoc.png)
 
 ![Conj Performance Graph](./vectors/benchmark/conj.png)
