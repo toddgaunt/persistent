@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-// Package vectors provides a persistent vector datastructure similar to the
-// one found in the Clojure programming language. The actual implementation
-// uses similar data structures as well, though implemented using Go idioms and
-// techniques.
+// Package vectors provides a persistent vector similar to the one found in the
+// Clojure programming language. The actual implementation uses data structures
+// similar to Clojure's implementation as well, though implemented using Go
+// idioms and techniques.
 package vectors
 
 import "fmt"
