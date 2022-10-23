@@ -40,10 +40,8 @@ plot() {
 
 mkdir -p "$dir"
 
-if ! [[ -f "$data" ]]; then
-	echo "Running benchmarks to generate $data"
-	go test -bench=. | tee "$data"
-fi
+echo "Running benchmarks to generate $data"
+go test -bench=. | tee "$data"
 
 printf "benchmark data found in $data, generating plots..." --
 plot

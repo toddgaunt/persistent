@@ -1,0 +1,51 @@
+goos: linux
+goarch: amd64
+pkg: github.com/toddgaunt/persistent/vectors
+cpu: AMD Ryzen 5 PRO 4650U with Radeon Graphics
+BenchmarkNthPersistent/100-12  	147351198	         7.487 ns/op
+BenchmarkNthPersistent/1000-12 	88916318	        12.63 ns/op
+BenchmarkNthPersistent/10000-12         	64791873	        19.93 ns/op
+BenchmarkNthPersistent/100000-12        	46383759	        23.89 ns/op
+BenchmarkNthPersistent/1000000-12       	35656069	        31.41 ns/op
+BenchmarkNthTransient/100-12            	86796238	        13.28 ns/op
+BenchmarkNthTransient/1000-12           	76538367	        15.75 ns/op
+BenchmarkNthTransient/10000-12          	45155901	        24.04 ns/op
+BenchmarkNthTransient/100000-12         	41538559	        28.75 ns/op
+BenchmarkNthTransient/1000000-12        	32319308	        36.30 ns/op
+BenchmarkNthGoNative/100-12             	190400835	         6.240 ns/op
+BenchmarkNthGoNative/1000-12            	201117499	         5.895 ns/op
+BenchmarkNthGoNative/10000-12           	240680898	         5.150 ns/op
+BenchmarkNthGoNative/100000-12          	235035513	         4.947 ns/op
+BenchmarkNthGoNative/1000000-12         	254352656	         4.590 ns/op
+BenchmarkAssocPersistent/100-12         	 1181641	      1010 ns/op
+BenchmarkAssocPersistent/1000-12        	  546171	      2135 ns/op
+BenchmarkAssocPersistent/10000-12       	  305482	      3560 ns/op
+BenchmarkAssocPersistent/100000-12      	  232184	      5330 ns/op
+BenchmarkAssocPersistent/1000000-12     	  194575	      6165 ns/op
+BenchmarkAssocTransient/100-12          	41408097	        27.20 ns/op
+BenchmarkAssocTransient/1000-12         	37768678	        33.14 ns/op
+BenchmarkAssocTransient/10000-12        	25734950	        44.85 ns/op
+BenchmarkAssocTransient/100000-12       	23977915	        50.46 ns/op
+BenchmarkAssocTransient/1000000-12      	15993244	        64.87 ns/op
+BenchmarkAssocGoNative/100-12           	195068212	         6.239 ns/op
+BenchmarkAssocGoNative/1000-12          	198892570	         5.812 ns/op
+BenchmarkAssocGoNative/10000-12         	219529754	         5.357 ns/op
+BenchmarkAssocGoNative/100000-12        	256906836	         4.747 ns/op
+BenchmarkAssocGoNative/1000000-12       	252407098	         4.602 ns/op
+BenchmarkConjPersistent/100-12          	   37520	     31886 ns/op
+BenchmarkConjPersistent/1000-12         	    3741	    314965 ns/op
+BenchmarkConjPersistent/10000-12        	     381	   3127027 ns/op
+BenchmarkConjPersistent/100000-12       	      31	  34740496 ns/op
+BenchmarkConjPersistent/1000000-12      	       4	 352110512 ns/op
+BenchmarkConjTransient/100-12           	  132577	      8696 ns/op
+BenchmarkConjTransient/1000-12          	   15606	     72541 ns/op
+BenchmarkConjTransient/10000-12         	    1770	    728317 ns/op
+BenchmarkConjTransient/100000-12        	     157	   6440060 ns/op
+BenchmarkConjTransient/1000000-12       	      18	  70983127 ns/op
+BenchmarkConjGoNative/100-12            	  727501	      1442 ns/op
+BenchmarkConjGoNative/1000-12           	  113454	     10161 ns/op
+BenchmarkConjGoNative/10000-12          	    8808	    114972 ns/op
+BenchmarkConjGoNative/100000-12         	     856	   1451592 ns/op
+BenchmarkConjGoNative/1000000-12        	      50	  23569343 ns/op
+PASS
+ok  	github.com/toddgaunt/persistent/vectors	72.624s
