@@ -26,13 +26,18 @@ item vector on a 12 thread machine.
 ![Nth Performance Graph](./vectors/benchmark/nth.png)
 
 ## For Developers
+
 This section is intended as guidance for developers and contributors to this
 project.
+
 ### Update package version
+
 Simply run `./version.sh increment` and follow the prompts. The VERSION.txt
 file will be updated and comitted to  Git automatically. After the commit, a
 tag using the incremented version number is created.
+
 ### Publishing package version
+
 After updating the version locally with `./version.sh increment`, the new version
 can be published with `./version.sh publish`. This pushes the Git tag which matches
 the current VERSION.txt file and publishes documentation to pkg.go.dev.
