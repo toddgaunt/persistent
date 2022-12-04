@@ -266,20 +266,15 @@ func (v Vector[T]) String() string {
 	return s
 }
 
-// TransientVector provides the same API as a persistent vector, however any
-// previous versions of a transient vector become invalid after any operation
-// that creates a new one an old one. While similar in
-// structure to a persistent vector, it is meant to be used in places
-// where persistence isn't needed, and faster performance for mutating operations
-// is required. Each time an operation on a TransientVector is performed, a
-// new one is created using the same underlying memory. The old TransientVector
-// is then marked invalidated so if it is used again with any of the operations
+// TransientVector provides the same API as a persistent vector, however a
+// transient vector becomes invalid after any operation that creates a new
+// vector from an itself. While transient vectors are similar in structure
+// to a persistent vectors, they are meant to be used in places where
+// persistence isn't needed, and faster performance for certain operations is
+// required. Each time an operation on a TransientVector is performed, a new
+// one is created using the same underlying memory. The old TransientVector is
+// then marked invalidated so if it is used again with any of the operations
 // this package provides, a panic occurs.
-//
-// Also note that the zero value of TransientVector is valid, even though it
-// isn't assigned an ID. This is because:
-//     1. An empty TransientVector can't possibly point to nodes owned by another vector.
-//     2. Once made persistent it's nodes will have a nil id, the same as persistent vectors.
 type TransientVector[T any] struct {
 	// id is used to ensure transients mutate only nodes with their unique ID.
 	// This works because a new ID is allocated whenever a transient vector is
@@ -287,6 +282,11 @@ type TransientVector[T any] struct {
 	// deallocated when all nodes that reference the id are reclaimed as well.
 	// This ensures that as long as a node exists with an already allocated ID,
 	// then it won't be allocated by a different transient vector.
+	//
+	// Also note that the zero value of TransientVector is valid, even though it
+	// isn't assigned an ID. This is because:
+	//     1. An empty TransientVector can't possibly point to nodes owned by another vector.
+	//     2. Once made persistent it's nodes will have a nil id, the same as persistent vectors.
 	id      *id
 	invalid bool     // Set to true to after a mutation.
 	count   int      // Number of items in this vector
