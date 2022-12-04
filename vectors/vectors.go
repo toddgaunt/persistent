@@ -107,7 +107,11 @@ func cloneNode[T any](id *id, original *node[T]) *node[T] {
 	return clone
 }
 
-// Vector is a persistent vector.
+// Vector is a persistent vector. Vector values can be treated as values, which
+// means that no operation on a Vector will modify it. Instead a new vector
+// will be created each time with the operation applied to using the old vector
+// as the base. Vector shares memory between instances so these operations are
+// quite fast.
 type Vector[T any] struct {
 	count int      // Number of items in this vector
 	depth int      // Depth of the tree under root
