@@ -15,7 +15,7 @@ features. A feature is considered done if the implementation is written with
 - [X] Lists
 	- [X] Functions:
 		- [X] New(): Creates a new list
-	- [ ] Methods:
+	- [X] Methods:
 		- [X] Conj(e): Creates a new list with item e prepended to the head
 		- [X] First(): Return the item from the head of the list
 		- [X] Len(): Returns the number of items in the list
@@ -24,11 +24,11 @@ features. A feature is considered done if the implementation is written with
 		- [X] String(): Creates a string representation of the list
 - [ ] Vectors:
 	- [ ] Persistent:
-		- [X] Functions:
+		- [ ] Functions:
 			- [X] New(): Creates a new vector
 			- [X] Transient(v): Creates a new transient vector from v
 			- [ ] Subvec(v, i, j): Creates a new vector from a subset of items in v from i (inclusive) to j (exclusive)
-		- Methods:
+		- [ ] Methods:
 			- [X] Assoc(i, e): Creates a new vector with index i updated to item e.
 			- [X] Conj(e): Creates a new vector with e appended to the end
 			- [X] Len(): Returns the number of items in the vector
@@ -37,10 +37,10 @@ features. A feature is considered done if the implementation is written with
 			- [ ] Pop(): Returns a new vector with the last item removed
 			- [X] String(): Creates a string representation of the vector
 	- [ ] Transient:
-		- [X] Functions:
+		- [ ] Functions:
 			- [X] Persistent(v): Creates a new persistent vector from v
 			- [ ] Subvec(v, i, j): Creates a new vector from a subset of items in v from i (inclusive) to j (exclusive)
-		- Methods:
+		- [ ] Methods:
 			- [X] Assoc(i, e): Creates a new vector with index i updated to item e.
 			- [X] Conj(v): Creates a new vector with v appended to the end
 			- [X] Len(): Returns the number of items in the vector
@@ -50,8 +50,8 @@ features. A feature is considered done if the implementation is written with
 			- [X] String(): Creates a string representation of the vector
 - [ ] Maps
 	- [ ] Persistent:
-		- [X] Functions:
-			- [X] New(): Creates a new map
+		- [ ] Functions:
+			- [ ] New(): Creates a new map
 		- Methods:
 			- [ ] Assoc(k, e): Creates a new map with key k associated to item e.
 			- [ ] Len(): Returns the number of items in the map
