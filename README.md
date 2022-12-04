@@ -6,6 +6,67 @@
 implementations of Clojure's persistent data structures (namely: lists,
 vectors, and maps) for Go, using generic types.
 
+## Package Progress
+
+The below is the roadmap and currently implementation status of planned
+features. A feature is considered done if the implementation is written with
+100% unit test coverage:
+
+- [X] Lists
+	- [X] Functions:
+		- [X] New(): Creates a new list
+	- [ ] Methods:
+		- [X] Conj(e): Creates a new list with item e prepended to the head
+		- [X] First(): Return the item from the head of the list
+		- [X] Len(): Returns the number of items in the list
+		- [X] Rest(): Returns a list of items containing all but the first value of the list
+		- [X] Pop(): Creates a new list without the first item
+		- [X] String(): Creates a string representation of the list
+- [ ] Vectors:
+	- [ ] Persistent:
+		- [X] Functions:
+			- [X] New(): Creates a new vector
+			- [X] Transient(v): Creates a new transient vector from v
+			- [ ] Subvec(v, i, j): Creates a new vector from a subset of items in v from i (inclusive) to j (exclusive)
+		- Methods:
+			- [X] Assoc(i, e): Creates a new vector with index i updated to item e.
+			- [X] Conj(e): Creates a new vector with e appended to the end
+			- [X] Len(): Returns the number of items in the vector
+			- [X] Nth(n): Returns the item at index n from the vector
+			- [X] Peek(): Returns the last item of the vector
+			- [ ] Pop(): Returns a new vector with the last item removed
+			- [X] String(): Creates a string representation of the vector
+	- [ ] Transient:
+		- [X] Functions:
+			- [X] Persistent(v): Creates a new persistent vector from v
+			- [ ] Subvec(v, i, j): Creates a new vector from a subset of items in v from i (inclusive) to j (exclusive)
+		- Methods:
+			- [X] Assoc(i, e): Creates a new vector with index i updated to item e.
+			- [X] Conj(v): Creates a new vector with v appended to the end
+			- [X] Len(): Returns the number of items in the vector
+			- [X] Nth(n): Returns the item at index n from the vector
+			- [X] Peek(): Returns the last item of the vector
+			- [ ] Pop(): Returns a new vector with the last item removed
+			- [X] String(): Creates a string representation of the vector
+- [ ] Maps
+	- [ ] Persistent:
+		- [X] Functions:
+			- [X] New(): Creates a new map
+		- Methods:
+			- [ ] Assoc(k, e): Creates a new map with key k associated to item e.
+			- [ ] Len(): Returns the number of items in the map
+			- [ ] Get(k): Returns the item associated with k from the map
+			- [ ] Peek(): Returns the last item of the map
+			- [ ] Pop(): Returns a new map with the last item removed
+			- [ ] String(): Creates a string representation of the map
+	- [ ] Transient:
+			- [ ] Assoc(k, e): Creates a new map with key k associated to item e.
+			- [ ] Len(): Returns the number of items in the map
+			- [ ] Get(k): Returns the item associated with k from the map
+			- [ ] Peek(): Returns the last item of the map
+			- [ ] Pop(): Returns a new map with the last item removed
+			- [ ] String(): Creates a string representation of the map
+
 ## Vectors Benchmarks
 
 The below benchmark graphs were constructed to compare persistent vectors,
