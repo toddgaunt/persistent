@@ -10,7 +10,7 @@ vectors, and maps) for Go, using generic types.
 
 The below is the roadmap and currently implementation status of planned
 features. A feature is considered done if the implementation is written with
-100% unit test coverage:
+adequate unit test coverage:
 
 - [X] Lists
 	- [X] Functions:
@@ -94,7 +94,7 @@ project.
 ### Update package version
 
 Simply run `./version.sh increment` and follow the prompts. The VERSION.txt
-file will be updated and comitted to  Git automatically. After the commit, a
+file will be updated and committed to  Git automatically. After the commit, a
 tag using the incremented version number is created.
 
 ### Publishing package version
