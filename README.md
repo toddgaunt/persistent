@@ -1,6 +1,7 @@
 # Persistent
 
 [![Go](https://github.com/toddgaunt/persistent/actions/workflows/go.yml/badge.svg)](https://github.com/toddgaunt/persistent/actions/workflows/go.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/toddgaunt/persistent.svg)](https://pkg.go.dev/github.com/toddgaunt/persistent)
 
 `persistent` is the top-level package for packages which provide
 implementations of Clojure's persistent data structures (namely: lists,
