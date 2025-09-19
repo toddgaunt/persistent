@@ -1,10 +1,10 @@
-package vectors_test
+package vector_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/toddgaunt/persistent/vectors"
+	"github.com/toddgaunt/persistent/vector"
 )
 
 var testSlice = func() []int {
@@ -16,7 +16,7 @@ var testSlice = func() []int {
 }()
 
 func TestVectorNth(t *testing.T) {
-	var vec = vectors.New(testSlice...)
+	var vec = vector.New(testSlice...)
 
 	for i := 0; i < len(testSlice); i++ {
 		if vec.Nth(i) != testSlice[i] {
@@ -79,7 +79,7 @@ func TestVectorAssoc(t *testing.T) {
 				}
 			}()
 
-			var vec1 = vectors.New(tc.slice...)
+			var vec1 = vector.New(tc.slice...)
 			var vec2 = vec1.Assoc(tc.index, tc.value)
 			if got, want := vec1.Nth(tc.index), tc.slice[0]; got != want {
 				t.Fatalf("got vec1.Nth(index)=%v, want vec1.Nth(index)=%v", got, want)
@@ -123,7 +123,7 @@ func TestVectorConj(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			var vec1 = vectors.New(tc.slice...)
+			var vec1 = vector.New(tc.slice...)
 			var vec2 = vec1.Conj(tc.value)
 			if vec1.Len() > 0 {
 				if got, want := vec1.Peek(), tc.slice[len(tc.slice)-1]; got != want {
@@ -159,9 +159,9 @@ func TestVectorString(t *testing.T) {
 		{"Jdoe", 185, 6.2, 14},
 	}
 
-	var intVec = vectors.New(intSlice...)
-	var stringVec = vectors.New(stringSlice...)
-	var structVec = vectors.New(structSlice...)
+	var intVec = vector.New(intSlice...)
+	var stringVec = vector.New(stringSlice...)
+	var structVec = vector.New(structSlice...)
 
 	if got, want := fmt.Sprintf("%v", intSlice), intVec.String(); got != want {
 		t.Errorf("got %s, want %s", got, want)
@@ -177,7 +177,7 @@ func TestVectorString(t *testing.T) {
 }
 
 func TestTransientVectorAssoc(t *testing.T) {
-	var vec = vectors.New(testSlice...)
+	var vec = vector.New(testSlice...)
 	var want = vec.Nth(0)
 
 	var tvec = vec.Transient()
@@ -188,7 +188,7 @@ func TestTransientVectorAssoc(t *testing.T) {
 }
 
 func TestTransientVectorConj(t *testing.T) {
-	var vec = vectors.New(testSlice...)
+	var vec = vector.New(testSlice...)
 	var want = vec.Nth(vec.Len() - 1)
 
 	var tvec = vec.Transient()
@@ -200,7 +200,7 @@ func TestTransientVectorConj(t *testing.T) {
 
 func FuzzVectorNth(f *testing.F) {
 	f.Fuzz(func(t *testing.T, b []byte) {
-		var vec = vectors.New(b...)
+		var vec = vector.New(b...)
 		for i := 0; i < vec.Len(); i++ {
 			if vec.Nth(i) != b[i] {
 				t.Fatalf("want element %d at index %d, got %d", b[i], i, vec.Nth(i))
@@ -220,7 +220,7 @@ func FuzzVectorAssoc(f *testing.F) {
 			}
 		}()
 
-		var vec = vectors.New(init...)
+		var vec = vector.New(init...)
 
 		var originalValue = vec.Nth(index)
 		var value = originalValue + 1
@@ -250,7 +250,7 @@ func FuzzVectorConj(f *testing.F) {
 		byte(33),
 	)
 	f.Fuzz(func(t *testing.T, init []byte, value byte) {
-		var vec = vectors.New(init...)
+		var vec = vector.New(init...)
 		var result = vec.Conj(value)
 
 		if got, want := vec.Len(), len(init); got != want {
@@ -265,7 +265,7 @@ func FuzzVectorConj(f *testing.F) {
 
 func FuzzTransientVectorNth(f *testing.F) {
 	f.Fuzz(func(t *testing.T, b []byte) {
-		var vec = vectors.New(b...)
+		var vec = vector.New(b...)
 		var tvec = vec.Transient()
 		for i := 0; i < tvec.Len(); i++ {
 			if tvec.Nth(i) != b[i] {
@@ -286,7 +286,7 @@ func FuzzTransientVectorAssoc(f *testing.F) {
 			}
 		}()
 
-		var vec = vectors.New(init...)
+		var vec = vector.New(init...)
 
 		var originalValue = vec.Nth(index)
 		var value = originalValue + 1
@@ -318,7 +318,7 @@ func FuzzTransientVectorConj(f *testing.F) {
 		byte(33),
 	)
 	f.Fuzz(func(t *testing.T, init []byte, value byte) {
-		var vec = vectors.New(init...)
+		var vec = vector.New(init...)
 		var tvec = vec.Transient()
 		var result = tvec.Conj(value)
 
@@ -340,16 +340,16 @@ var benchmarkCases = []int{
 	1000000,
 }
 
-func newBenchmarkVec(n int) vectors.Vector[int] {
+func newBenchmarkVec(n int) vector.Vector[int] {
 	init := make([]int, 0, n)
 	for i := 0; i < n; i++ {
 		init = append(init, i+1)
 	}
-	return vectors.New(init...)
+	return vector.New(init...)
 }
 
-func newBenchmarkTransientVector(n int) vectors.TransientVector[int] {
-	vec := vectors.TransientVector[int]{}
+func newBenchmarkTransientVector(n int) vector.TransientVector[int] {
+	vec := vector.TransientVector[int]{}
 	for i := 0; i < n; i++ {
 		vec = vec.Conj(i + 1)
 	}
@@ -437,7 +437,7 @@ func BenchmarkConjPersistent(b *testing.B) {
 	for _, n := range benchmarkCases {
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				vec := vectors.New[int]()
+				vec := vector.New[int]()
 				for i := 0; i < n; i++ {
 					vec = vec.Conj(i)
 				}
@@ -450,7 +450,7 @@ func BenchmarkConjTransient(b *testing.B) {
 	for _, n := range benchmarkCases {
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				tvec := vectors.New[int]().Transient()
+				tvec := vector.New[int]().Transient()
 				for i := 0; i < n; i++ {
 					tvec = tvec.Conj(i)
 				}
