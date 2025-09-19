@@ -58,9 +58,9 @@ function increment-version() {
 }
 
 function publish-version() {
-			local version="v$(cat VERSION.txt)"
-			git push origin "$version"
-			GOPROXY="proxy.golang.org" go list -m "github.com/toddgaunt/persistent@$version"
+	local version="v$(cat VERSION.txt)"
+	git push origin "$version"
+	GOPROXY="proxy.golang.org" go list -m "github.com/toddgaunt/persistent@$version"
 }
 
 function usage() {
