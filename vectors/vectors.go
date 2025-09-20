@@ -6,7 +6,7 @@
 // Clojure programming language. The actual implementation uses data structures
 // similar to Clojure's implementation as well, though implemented using Go
 // idioms and techniques.
-package vector
+package vectors
 
 import "fmt"
 

@@ -6,7 +6,7 @@
 // found in the Clojure programming language. The actual implementation is
 // a very simple linked list, with an API designed carefully to integrate
 // well with other persistent data structures.
-package list
+package lists
 
 import (
 	"fmt"

@@ -3,12 +3,12 @@ package list_test
 import (
 	"testing"
 
-	"github.com/toddgaunt/persistent/list"
+	"github.com/toddgaunt/persistent/lists"
 )
 
 func TestNew(t *testing.T) {
 	var slice = []int{1, 2, 3, 4, 5}
-	var list = list.New(slice...)
+	var list = lists.New(slice...)
 
 	for i := 0; i < len(slice); i++ {
 		if list.First() != slice[i] {
@@ -19,8 +19,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestListIsEmpty(t *testing.T) {
-	var empty = list.New[int]()
-	if !list.IsEmpty(empty) {
+	var empty = lists.New[int]()
+	if !lists.IsEmpty(empty) {
 		t.Fatalf("want empty list, got %v", empty)
 	}
 }
@@ -28,14 +28,14 @@ func TestListIsEmpty(t *testing.T) {
 func TestListLen(t *testing.T) {
 	type testCase struct {
 		title string
-		list  list.List[int]
+		list  lists.List[int]
 		want  int
 	}
 
 	testCases := []testCase{
-		{"Empty", list.New[int](), 0},
-		{"SingleElement", list.New(42), 1},
-		{"MultipleElements", list.New(1, 2, 3), 3},
+		{"Empty", lists.New[int](), 0},
+		{"SingleElement", lists.New(42), 1},
+		{"MultipleElements", lists.New(1, 2, 3), 3},
 	}
 
 	for _, tc := range testCases {
@@ -52,23 +52,23 @@ func TestListLen(t *testing.T) {
 func TestListConj(t *testing.T) {
 	type testCase struct {
 		title string
-		list  list.List[string]
-		want  list.List[string]
+		list  lists.List[string]
+		want  lists.List[string]
 	}
 
-	var empty = list.New[string]()
+	var empty = lists.New[string]()
 	var world = empty.Conj("world")
 	testCases := []testCase{
-		{"Empty", empty, list.New[string]()},
-		{"ConjValue", empty.Conj("world"), list.New("world")},
-		{"ConjBranchOne", world.Conj("hello"), list.New("hello", "world")},
-		{"ConjBranchTwo", world.Conj("goodbye"), list.New("goodbye", "world")},
+		{"Empty", empty, lists.New[string]()},
+		{"ConjValue", empty.Conj("world"), lists.New("world")},
+		{"ConjBranchOne", world.Conj("hello"), lists.New("hello", "world")},
+		{"ConjBranchTwo", world.Conj("goodbye"), lists.New("goodbye", "world")},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		f := func(t *testing.T) {
-			if got, want := tc.list, tc.want; !list.Equal(got, want) {
+			if got, want := tc.list, tc.want; !lists.Equal(got, want) {
 				t.Fatalf("got %v, want %v", got, want)
 			}
 		}
@@ -79,23 +79,23 @@ func TestListConj(t *testing.T) {
 func TestEqual(t *testing.T) {
 	type testCase struct {
 		title string
-		a     list.List[int]
-		b     list.List[int]
+		a     lists.List[int]
+		b     lists.List[int]
 		want  bool
 	}
 
 	testCases := []testCase{
-		{"Empty", list.New[int](), list.New[int](), true},
-		{"SingleElementEqual", list.New(42), list.New(42), true},
-		{"SingleElementDiffer", list.New(42), list.New(41), false},
-		{"MultipleElementsEqual", list.New(1, 2, 3), list.New(1, 2, 3), true},
-		{"MultipleElementsDiffer", list.New(1, 2, 3), list.New(2, 3, 1), false},
+		{"Empty", lists.New[int](), lists.New[int](), true},
+		{"SingleElementEqual", lists.New(42), lists.New(42), true},
+		{"SingleElementDiffer", lists.New(42), lists.New(41), false},
+		{"MultipleElementsEqual", lists.New(1, 2, 3), lists.New(1, 2, 3), true},
+		{"MultipleElementsDiffer", lists.New(1, 2, 3), lists.New(2, 3, 1), false},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		f := func(t *testing.T) {
-			if got, want := list.Equal(tc.a, tc.b), tc.want; got != want {
+			if got, want := lists.Equal(tc.a, tc.b), tc.want; got != want {
 				t.Fatalf("got %v, want %v", got, want)
 			}
 		}
