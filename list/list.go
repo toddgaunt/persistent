@@ -13,10 +13,9 @@ import (
 )
 
 // List is a persistent data structure that can be treated as a value
-// (similarly to an int) after any of the operations provided by this package.
-// This means even when Conj'ing an item to a List, the previous version
-// of that List can be used in more operations and referenced without having
-// been mutated from any operations it was used as input for.
+// (similarly to an int or another built-in Go type). This means even when
+// modifying a List provided by this package, the previous version
+// of that List can used without any any of the modifications apparent.
 type List[T any] struct {
 	count int
 	first T
@@ -26,8 +25,8 @@ type List[T any] struct {
 // New creates a new persistent list constructed using vals with
 // the first of vals being the head of the list, and the last
 // of vals being the end of the list. As an example, New(1,
-// 2, 3, 4) results in a (1, 2, 3, 4) and not (4, 3, 2, 1) as what
-// would be constructed if done manually using Conj for each value.
+// 2, 3, 4) results in (1, 2, 3, 4). Note that this is the reverse of
+// (4, 3, 2, 1) which is what would be constructed with Conj.
 func New[T any](vals ...T) List[T] {
 	var l List[T]
 
@@ -38,7 +37,7 @@ func New[T any](vals ...T) List[T] {
 	return l
 }
 
-// Len returns the number of items in the list.
+// Len returns the number of values in the list.
 func (l List[T]) Len() int {
 	return l.count
 }
@@ -48,8 +47,7 @@ func (l List[T]) First() T {
 	return l.first
 }
 
-// Rest returns a list of items containing all but the first item of the
-// original list.
+// Rest returns a list of items containing all but the first item.
 func (l List[T]) Rest() List[T] {
 	return *l.rest
 }

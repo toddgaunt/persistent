@@ -26,14 +26,14 @@ func indexInTail[T any](index int, count int, tail []T) bool {
 	return index >= (count - len(tail))
 }
 
-// isDeepEnoughToAppend evaluates a depth for a Vec to be deep enough for a
-// given count. Returns true if a Vec of depth can be appended to without
+// isDeepEnoughToAppend evaluates if a vector's depth is be deep enough for a
+// given count. Returns true if a depth can be appended to without
 // creating a new root, otherwise returns false.
 func isDeepEnoughToAppend(depth, count int) bool {
 	return (count >> nodeBits) <= (1 << depth)
 }
 
-// findValues returns the slice of values within the vector which contains the
+// findValues returns the slice of values within the tree which contains the
 // value i is associated with.
 func findValues[T any](count, depth int, root *node[T], tail []T, index int) []T {
 	if index < 0 || index >= count {
@@ -107,11 +107,10 @@ func cloneNode[T any](id *id, original *node[T]) *node[T] {
 	return clone
 }
 
-// Vector is a persistent vector. Vector values can be treated as values, which
-// means that no operation on a Vector will modify it. Instead a new vector
-// will be created each time with the operation applied to using the old vector
-// as the base. Vector shares memory between instances so these operations are
-// quite fast.
+// Vector is a persistent vector. Vectors as values, which means that no operation
+// on a vector will modify its contents. Instead, each time a modifying operation
+// is applied, a new vector will be created using the original vector as the
+// base. Memory is shared between instances so these operations are quite fast.
 type Vector[T any] struct {
 	count int      // Number of items in this vector
 	depth int      // Depth of the tree under root
@@ -120,17 +119,17 @@ type Vector[T any] struct {
 }
 
 // New creates a new persistent vector constructed from the values provided.
-func New[T any](vals ...T) Vector[T] {
+func New[T any](values ...T) Vector[T] {
 	var v = Vector[T]{}.Transient()
 
-	for i := 0; i < len(vals); i++ {
-		v = v.Conj(vals[i])
+	for i := 0; i < len(values); i++ {
+		v = v.Conj(values[i])
 	}
 
 	return v.Persistent()
 }
 
-// Transient creates a new transient vector using v as its base
+// Transient creates a new transient vector using v as its base.
 func (v Vector[T]) Transient() TransientVector[T] {
 	id := new(id)
 	return TransientVector[T]{
@@ -143,23 +142,23 @@ func (v Vector[T]) Transient() TransientVector[T] {
 	}
 }
 
-// Len returns the number of values in v
+// Len returns the number of values in v.
 func (v Vector[T]) Len() int {
 	return v.count
 }
 
-// Nth returns from the vector the value at the index provided. The index must
-// be greater than zero and less than v.count.
+// Nth returns the value at the index provided. The index must
+// be greater than zero and less than v.Len().
 func (v Vector[T]) Nth(index int) T {
 	return findValues(v.count, v.depth, v.root, v.tail, index)[indexAt(0, index)]
 }
 
-// Peek returns the last value from a vector.
+// Peek returns the last value from v
 func (v Vector[T]) Peek() T {
 	return v.Nth(v.count - 1)
 }
 
-// Assoc creates a new vector that contains val at the location indexed by key.
+// Assoc creates a new vector that contains value at the location indexed by key.
 // The key must be greater than zero and less than v.Len().
 func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 	if index < 0 || index >= v.count {
@@ -179,7 +178,7 @@ func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 		}
 	}
 
-	// Create a new root so the original vector isn't changed.
+	// Create a new root so v isn't changed.
 	var newRoot = cloneNode(persistent, v.root)
 
 	// Walk through the tree, cloning the path to the updated node.
@@ -189,6 +188,7 @@ func (v Vector[T]) Assoc(index int, value T) Vector[T] {
 		walk.nodes[i] = cloneNode(persistent, walk.nodes[i])
 		walk = walk.nodes[i]
 	}
+
 	// Finally, update the value in the leaf node.
 	walk.values[indexAt(0, index)] = value
 
@@ -236,8 +236,9 @@ func (v Vector[T]) Conj(val T) Vector[T] {
 		}
 		indirect = &(*indirect).nodes[indexAt(level, v.count-1)]
 	}
-	// Move the old tail as a new node into the trie. Since it has a new path,
-	// other vectors sharing this trie won't be affected by this change.
+
+	// Move the old tail as a new node into the tree. Since it has a new path,
+	// other vectors sharing this tree won't be affected by this change.
 	*indirect = newLeaf(persistent, v.tail)
 
 	// Create a new tail that contains the conjugated value.
@@ -271,10 +272,10 @@ func (v Vector[T]) String() string {
 }
 
 // TransientVector provides the same API as a persistent vector, however a
-// transient vector becomes invalid after any operation that creates a new
-// vector from an itself. While transient vectors are similar in structure
+// transient vector invalidates itself after any operation that results in a
+// modified vector result. While transient vectors are similar in structure
 // to a persistent vectors, they are meant to be used in places where
-// persistence isn't needed, and faster performance for certain operations is
+// persistence isn't needed and faster performance for certain operations is
 // required. Each time an operation on a TransientVector is performed, a new
 // one is created using the same underlying memory. The old TransientVector is
 // then marked invalidated so if it is used again with any of the operations
@@ -283,7 +284,7 @@ type TransientVector[T any] struct {
 	// id is used to ensure transients mutate only nodes with their unique ID.
 	// This works because a new ID is allocated whenever a transient vector is
 	// made which uses a unique pointer address for the ID. This ID is only
-	// deallocated when all nodes that reference the id are reclaimed as well.
+	// released when all nodes that reference the id are reclaimed as well.
 	// This ensures that as long as a node exists with an already allocated ID,
 	// then it won't be allocated by a different transient vector.
 	//
@@ -296,7 +297,7 @@ type TransientVector[T any] struct {
 	count   int      // Number of items in this vector
 	depth   int      // Depth of the tree under root
 	tail    []T      // Quickly access items at the end of the vector
-	root    *node[T] // Root of the tree containg either child nodes or items
+	root    *node[T] // Root of the tree containing either child nodes or items
 }
 
 func (v TransientVector[T]) ensureValid() {
@@ -322,15 +323,15 @@ func (v TransientVector[T]) Persistent() Vector[T] {
 	}
 }
 
-// Len returns the number of values in v
+// Len returns the number of values in v.
 func (v TransientVector[T]) Len() int {
 	v.ensureValid()
 
 	return v.count
 }
 
-// Nth returns from the vector the value at the index provided. The index must
-// be greater than zero and less than v.count.
+// Nth returns the value at the index provided. The index must
+// be greater than zero and less than v.Len().
 func (v TransientVector[T]) Nth(index int) T {
 	v.ensureValid()
 
@@ -363,8 +364,7 @@ func (v TransientVector[T]) String() string {
 	return s
 }
 
-// Assoc returns a transient vector with a value updated at the given index,
-// invalidating the transient vector that was operated on.
+// Assoc returns a transient vector with a value updated at the given index, invalidating v.
 func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
 	v.invalidate()
 
@@ -410,8 +410,7 @@ func (v TransientVector[T]) Assoc(index int, value T) TransientVector[T] {
 	}
 }
 
-// Conj returns a transient vector with a value appended to the end,
-// invalidating the transient vector operated on.
+// Conj returns a transient vector with a value appended to the end, invalidating v.
 func (v TransientVector[T]) Conj(val T) TransientVector[T] {
 	v.invalidate()
 
